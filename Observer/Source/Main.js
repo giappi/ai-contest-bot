@@ -5,6 +5,8 @@ var g_replay;
 var g_gsLoader;
 var g_gsActionPhase;
 
+var path = [];
+
 
 function LoadAllState () {
 	// Create, but not connect yet

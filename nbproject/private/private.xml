@@ -5,6 +5,8 @@
         <group>
             <file>file:/E:/__DOCUMENT__/GameLoft/AI%20Contest/Pack2.0/Observer/Source/Main.js</file>
             <file>file:/E:/__DOCUMENT__/GameLoft/AI%20Contest/Pack2.0/Arena/P1.js</file>
+            <file>file:/E:/__DOCUMENT__/GameLoft/AI%20Contest/Pack2.0/Observer/Source/Object/Tank.js</file>
+            <file>file:/E:/__DOCUMENT__/GameLoft/AI%20Contest/Pack2.0/Server/Objects/Bullet.js</file>
             <file>file:/E:/__DOCUMENT__/GameLoft/AI%20Contest/Pack2.0/Observer/Source/State/GSActionPhase.js</file>
             <file>file:/E:/__DOCUMENT__/GameLoft/AI%20Contest/Pack2.0/Observer/Source/Object/Obstacle.js</file>
         </group>

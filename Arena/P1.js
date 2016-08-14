@@ -912,9 +912,9 @@ function Tank()
         this.goTo(x, y);
         
         var k = -1;
-        while( this.path.length == 1 && ++k < $point_gold[GetMyTeam()].length)
+        while( this.path.length == 0 && ++k < $point_gold[GetMyTeam()].length)
         {
-            printf("Point gold length: " + $point_gold[GetMyTeam()].length);
+            //printf("Point gold length: " + $point_gold[GetMyTeam()].length);
             
             //var new_target = $point_gold[GetMyTeam()][ ($point_gold[GetMyTeam()].length - 1) * Math.random() | 0];
             var new_target = $point_gold[GetMyTeam()][k];
@@ -922,6 +922,11 @@ function Tank()
             
             this.goTo(new_target[0], new_target[1]);
         }
+        
+        
+        
+        
+        
     };
     
     this.stop = function()
@@ -1031,16 +1036,25 @@ function Tank()
     this.update = function()
     {
         
+        
+        // go to enemy base
         if( this.path.length === 0 && this.target.length && !( this.m_x === this.target[0] && this.m_y === this.target[1]) )
         {
             this.goTo( this.target[0], this.target[1]);
         }
 
-        //if(this.m_id == 2)
+        /*
+        if(this.m_id == 2)
         {
             //printf(">>>> Tank 2: path.length: " + this.path.length + ", x = " + this.m_x + ", y = " + this.m_y + ", tx=" + this.target[0] + ", ty="+ this.target[1]);
             //rintf(this.path);
         }
+        */
+       
+       
+       /**********************************
+        **            SHOOT             **
+        **********************************/
        
        // Shoot any where , but my base
        var my_base = $base_main[GetMyTeam()];
@@ -1750,7 +1764,7 @@ function SendCommand()
 // ====================================================================================
 // HELPING FUNCTIONS: THESE ARE FUNCTIONS THAT HELP YOU RETRIEVE GAME VARIABLES
 // ====================================================================================
-function GetTileAt(x, y, tank_id)
+function GetTileAt(x, y)
 {
     // This function return landscape type of the tile block on the map
     // It'll return the following value:
@@ -1760,10 +1774,9 @@ function GetTileAt(x, y, tank_id)
     // BLOCK_SOFT_OBSTACLE
     // BLOCK_BASE
     
-    var l = g_map.concat();
-    //console.log(l);
-
-    return l[Math.ceil(y) * MAP_W + Math.ceil(x)];
+    //var l = g_map.concat();
+    //return l[Math.ceil(y) * MAP_W + Math.ceil(x)];
+    return GetMap()[y][x];
 }
 
 function GetMyTeam()
@@ -1883,7 +1896,7 @@ function OnPlaceTankRequest()
     printf("The team " + g_team);
     
     //Lite to heavy
-    var W = [TANK_MEDIUM, TANK_MEDIUM, TANK_HEAVY, TANK_HEAVY];
+    var W = [TANK_LIGHT, TANK_MEDIUM, TANK_HEAVY, TANK_HEAVY];
     
     $place = {};
     //$place[TEAM_1] = [[7, 1], [6, 1], [5, 1], [4, 1]];
@@ -1900,8 +1913,8 @@ function OnPlaceTankRequest()
     
     $path = {};
     $path[TEAM_1] = [];
-    $path[TEAM_1][0] = [[20, 1]];
-    $path[TEAM_1][1] = [[20, 1]];
+    $path[TEAM_1][0] = [[20,  1]];
+    $path[TEAM_1][1] = [[20,  1]];
     $path[TEAM_1][2] = [[20, 20]];
     $path[TEAM_1][3] = [[19, 20], [18, 20], [20, 20]];
     

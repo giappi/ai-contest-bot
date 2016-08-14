@@ -269,7 +269,7 @@ function findPath(world, pathStart, pathEnd)
 
 function printf(o)
 {
-    if(1)
+    if(0)
     {
         console.log(o);
     }
@@ -839,7 +839,15 @@ function Tank()
     
     this.updatePath = function()
     {
-        this.goTo(this.target[0], this.target[1]);
+        var x = this.target[0], y = this.target[1];
+        if( this.CheckForCollision(x, y))
+        {
+            this.goTo(this.target[0], this.target[1]);
+        }
+        else
+        {
+            this.target = $point_gold[ ($point_gold.length - 1) * Math.random() | 0];
+        }
     };
     
     this.stop = function()
@@ -1794,7 +1802,7 @@ function OnPlaceTankRequest()
     $place[TEAM_2] = GetOpposite($place[TEAM_1]);
     
     $target = {};
-    $target[TEAM_1] = [[20, 8], [20, 1], [20, 6], [20, 5]];
+    $target[TEAM_1] = [[20, 4], [20, 3], [20, 2], [20, 1]];
     $target[TEAM_2] = GetOpposite($target[TEAM_1]);
     
     $base_main = {};
@@ -1805,8 +1813,10 @@ function OnPlaceTankRequest()
     $path[TEAM_1] = [];
     $path[TEAM_1][0] = [[20, 1]];
     $path[TEAM_1][1] = [[20, 1]];
-    $path[TEAM_1][2] = [[19, 1], [18, 1], [20, 1]];
+    $path[TEAM_1][2] = [[20, 1]];
     $path[TEAM_1][3] = [[20, 1]];
+    
+    $point_gold = [[20, 1], [20, 2], [20, 3], [20, 4], [20, 5], [20, 6], [20, 7], [20, 7]];
 
    
     for(var i = 0; i < NUMBER_OF_TANK; i++)

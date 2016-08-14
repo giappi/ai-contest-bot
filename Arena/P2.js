@@ -979,7 +979,7 @@ function OnPlaceTankRequest()
     {
         PlaceTank(TANK_LIGHT, 16, 4);
         PlaceTank(TANK_MEDIUM, 17, 8);
-        PlaceTank(TANK_HEAVY, 17, 13);
+        PlaceTank(TANK_HEAVY, 20, 5);
         PlaceTank(TANK_HEAVY, 16, 19);
     }
 

@@ -475,10 +475,16 @@ var DecodeFloat32 = function(string, offset)
 
 function printf(o)
 {
-    if(0)
+    // hg
+    //if(0)
     {
         console.log(o);
     }
+}
+
+function GetDistance(point1, point2)
+{
+    return Math.hypot(point2[0] - point1[0], point2[1] - point1[1]);
 }
 
 function Obstacle()
@@ -788,7 +794,7 @@ function Tank()
         printf(">> Tank " + this.m_id + " cal dir = " +DIRECTIONS[dir]);
         if(dir > -1)
         {
-            if( this.m_id == 2)
+            if( this.m_id == 3)
             printf("inside Tank " + this.m_id + " is at [" + this.m_x + ", " + this.m_y + "], and will jump to [" + x + ", " + y + "] ");
             this.m_direction = dir;
             this.goForward();
@@ -800,7 +806,7 @@ function Tank()
         }
         
         //var tile = this.getTileForward();
-        if( this.m_id == 2)
+        if( this.m_id == 3)
             printf(">>> Tank " + this.m_id + " is at [" + this.m_x + ", " + this.m_y + "], and will jump to [" + x + ", " + y + "] ");
         //printf(`Tank${this.m_id}.getTileForward = ` + BLOCKS[this.getTileForward()] + ", dir=" + DIRECTIONS[this.m_direction]);
         
@@ -1010,7 +1016,7 @@ function Tank()
                     //if(g_team == e)
                     {
                         printf("this.id = " + this.m_id);
-                        printf("... collision with other tanks : tank["+tempTank.m_id+"] = " + tempTank.m_direction + ", this = " + this.m_direction + ". speed1 = " + tempTank.m_speed + ", speed2 = " + this.m_speed + " .");
+                        printf("... collision with other tanks : tank["+tempTank.m_id+"].dir = " + tempTank.m_direction + ", this.dir = " + this.m_direction);
                     }
                     return false;
                 }
@@ -1872,6 +1878,8 @@ function OnPlaceTankRequest()
     
     //var map1 = [[1, 1], [2, 1], [3, 1], [4, 1]].reverse();
     
+    
+    // hg
     printf("The team " + g_team);
     
     //Lite to heavy
@@ -1883,7 +1891,7 @@ function OnPlaceTankRequest()
     $place[TEAM_2] = GetOpposite($place[TEAM_1]);
     
     $target = {};
-    $target[TEAM_1] = [[20, 4], [20, 3], [20, 2], [20, 1]];
+    $target[TEAM_1] = [[20, 4], [20, 3], [20, 18], [20, 19]];
     $target[TEAM_2] = GetOpposite($target[TEAM_1]);
     
     $base_main = {};
@@ -1894,8 +1902,8 @@ function OnPlaceTankRequest()
     $path[TEAM_1] = [];
     $path[TEAM_1][0] = [[20, 1]];
     $path[TEAM_1][1] = [[20, 1]];
-    $path[TEAM_1][2] = [[20, 1]];
-    $path[TEAM_1][3] = [[20, 1]];
+    $path[TEAM_1][2] = [[20, 20]];
+    $path[TEAM_1][3] = [[19, 20], [18, 20], [20, 20]];
     
     $path[TEAM_2] = [];
     for(var i = 0; i <  $path[TEAM_1].length; i++)
@@ -1905,6 +1913,7 @@ function OnPlaceTankRequest()
     
     $point_gold = {};
     $point_gold[TEAM_1] = [[20, 4], [20, 5], [20, 6], [20, 7], [20, 8]];
+    //$point_gold[TEAM_1].concat([[20, 13], [20, 14], [20, 15], [20, 16], [20, 17], [20, 18], [20, 19]]);
     $point_gold[TEAM_2] = GetOpposite($point_gold[TEAM_1]);
 
    

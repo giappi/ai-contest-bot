@@ -269,7 +269,7 @@ function findPath(world, pathStart, pathEnd)
 
 function printf(o)
 {
-    if(0)
+    if(1)
     {
         console.log(o);
     }
@@ -849,7 +849,7 @@ function Tank()
     
     this.shoot = function(b)
     {
-        //shooting = true;
+        shooting = true;
     };
     
     this.setPath = function(p)
@@ -1991,8 +1991,8 @@ function Update()
     {
 
         // get your team list and sort by HP
-        var L = GetEnemyList().sort(function(e1, e2){ e1.m_HP - e2.m_HP;});
-        // drop into tank have the mallest HP 
+        var L = GetEnemyList().sort(function(e1, e2){ e2.m_HP - e1.m_HP;});
+        // drop into tank have the most HP 
         UseEMP( L[0].getX(), L[0].getY());
 
     }

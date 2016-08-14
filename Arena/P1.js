@@ -267,13 +267,6 @@ function findPath(world, pathStart, pathEnd)
 
 
 
-function printf(o)
-{
-    if(0)
-    {
-        console.log(o);
-    }
-}
 
 
 
@@ -479,6 +472,14 @@ var DecodeFloat32 = function(string, offset)
 // Game objects
 // =============================================
 
+
+function printf(o)
+{
+    if(0)
+    {
+        console.log(o);
+    }
+}
 
 function Obstacle()
 {
@@ -714,6 +715,8 @@ function Tank()
         for(i = begin; 0 <= i && i < end; i += [[-1, 0], [0, -1], [1, 0], [0, 1]][d][vertical])
         {
             tile = !vertical ? GetTileAt(i, y0, this.m_id) : GetTileAt(x0, i, this.m_id);
+            //check for enemy tank
+
             //printf("tile[" + (vertical ? x0 : i) + "][" + (vertical ? i : y0) + "] = " + tile + ", " + BLOCKS[tile]);
             if(tile != BLOCK_GROUND)
             {
@@ -736,13 +739,53 @@ function Tank()
         {
             return false;
         }
+        
+  // if dx != 0 and dy != 0 : divide in to 2 line 
+        if( (x - this.m_x)*(y - this.m_y) != 0)
+        {
+            printf("\n");
+            printf("View here: ");
+            printf("path: ");
+            printf(this.path);
+            var p = this.path.pop();
+            printf("Tank " + this.m_id + " is at [" + this.m_x + ", " + this.m_y + "]  to [" + x + ", " + y + "] ");
+            printf(">> Change path: Tank" + this.m_id + " , p = " + p.toString());
+            if( this.CheckForCollision(this.m_x, p[1]))
+            {
+                this.path.push([p[0], p[1]]);
+                this.path.push([this.m_x, p[1]]);
+                
+                printf(this.path);
+                printf("End view 1.");
+                return;
+            }
+            else
+            if( this.CheckForCollision(p[0], this.m_y))
+            {
+                this.path.push([p[0], p[1]]);
+                this.path.push([p[0], this.m_y]);
+                
+                printf(this.path);
+                printf("End view 2.");
+                return;
+            }
+            else
+            {
+                this.path.push(p);
+                printf("End view 3.");
+                return;
+            }
+        }
+        
+        
+         
         //printf(this.m_x + "," + this.m_y + "," + this.lastX + "," + this.lastY + "\n");
         //Update path if tank can not move with old path
         //printf(`GetTileAt(${x}, ${y}) = ` + BLOCKS[GetTileAt(x, y)]);
 
         //calculate direction
         var dir = this.calcLineDirectionTo(x, y);
-        printf(">> Tank " + this.m_id + " cal dir = " + dir);
+        printf(">> Tank " + this.m_id + " cal dir = " +DIRECTIONS[dir]);
         if(dir > -1)
         {
             if( this.m_id == 2)
@@ -792,20 +835,18 @@ function Tank()
         if (newX % 1 > 0.95) newX = (newX >> 0) + 1;
         if (newY % 1 < 0.05) newY = (newY >> 0);
         if (newY % 1 > 0.95) newY = (newY >> 0) + 1;
+        
+       
 
         // Check to see if that position is valid (no collision)
-        newPositionOK = this.CheckForCollision(newX, newY);
+        newPositionOK = this.CheckForCollision(newX, newY) ;
 
-        
-        
-        
-        
-        
+
         if( !(this.m_x == x && this.m_y == y) && !newPositionOK)
         {
-            printf("Tank["+this.m_id+"] updated path.");
-            printf(this.path);
+            printf("Tank["+this.m_id+"] updated path because collision.");
             this.updatePath();
+            printf(this.path);
         }
         
     };
@@ -816,6 +857,7 @@ function Tank()
         //calculate direction
         var dx = x - this.m_x;
         var dy = y - this.m_y;
+
         return dx > 0 ? DIRECTION_RIGHT : dx < 0 ? DIRECTION_LEFT : dy > 0 ? DIRECTION_DOWN : dy < 0 ? DIRECTION_UP : -1;
     };
     
@@ -827,26 +869,52 @@ function Tank()
         
         this.target = [x, y];
         
-        this.path = [];
-        this.path.push([this.m_x | 0, this.m_y | 0]);
+        
+        
+       
+        
+        
         //printf(">>> findPath(, x, y)");
         //printf(findPath(GetMap(), [this.m_x | 0, this.m_y | 0], [x, y]).reverse());
-        this.path = findPath(GetMap(), [this.m_x | 0, this.m_y | 0], [x, y]).reverse().concat(this.path);
-        //printf(">>> This.path = ");
+        
+        var path = findPath(GetMap(), [this.m_x | 0, this.m_y | 0], [x, y]);
+
+        this.path = path.reverse();
+        // remove current position
+        this.path.pop();
+        //this.path.push([this.m_x | 0, this.m_y | 0]);
+        
+        //printf(`>>> Tank ${this.m_id} Find path from  = [${this.m_x | 0}, ${this.m_y | 0}] to [${x}, ${y}]`);
         //printf(this.path);
         //printf(GetMap());
     };
     
     this.updatePath = function()
     {
-        var x = this.target[0], y = this.target[1];
-        if( this.CheckForCollision(x, y))
+        if( !this.target)
         {
-            this.goTo(this.target[0], this.target[1]);
+            printf("Tank " + this.m_id + " :  Target is null.");
+            return false;
         }
-        else
+        
+        printf("Tank " + this.m_id + " :  ");
+        //printf(this.path);
+        
+        var x = this.target[0], y = this.target[1];
+        
+        // Try to goto target
+        this.goTo(x, y);
+        
+        var k = -1;
+        while( this.path.length == 1 && ++k < $point_gold[GetMyTeam()].length)
         {
-            this.target = $point_gold[ ($point_gold.length - 1) * Math.random() | 0];
+            printf("Point gold length: " + $point_gold[GetMyTeam()].length);
+            
+            //var new_target = $point_gold[GetMyTeam()][ ($point_gold[GetMyTeam()].length - 1) * Math.random() | 0];
+            var new_target = $point_gold[GetMyTeam()][k];
+            printf(" Can not move to target [" + this.target[0] + ", "+this.target[1]+"] , chose other target [" + new_target[0] + ", "+new_target[1]+"]. ");
+            
+            this.goTo(new_target[0], new_target[1]);
         }
     };
     
@@ -908,40 +976,47 @@ function Tank()
 			||  g_map[y * MAP_W + x] == BLOCK_SOFT_OBSTACLE
 			||  g_map[y * MAP_W + x] == BLOCK_BASE)
             {
+                printf("... square is invalid... g["+y+"][ "+ x +" ] = " + BLOCKS[g_map[y * MAP_W + x]]);
+                printf("newX = " +  newX + ", newY = " + newY);
 				return false;
 			}
 		}
 		
+        
+     
+        
+        
 		// If landscape is valid, time to check collision with other tanks.
-		for (var i=0; i < g_tanks[TEAM_1].length; i++)
+        var TT = [TEAM_1, TEAM_2]; 
+        for(var k in TT)
         {
-			if (this.m_team == TEAM_1 && this.m_id == i)
+            var e = TT[k];
+            for (var i=0; i < g_tanks[e].length; i++)
             {
-				continue;
-			}
-			var tempTank = g_tanks[TEAM_1][i];
-			if (Math.abs(newX - tempTank.m_x) < 1 && Math.abs(newY - tempTank.m_y) < 1)
-            {
-                //giap.hoangdinh: Same direction and greater speed => no collision
-                if(tempTank.m_direction == this.m_direction && tempTank.m_speed >= this.m_speed)
+                if (this.m_team == e && this.m_id == i)
                 {
-                    return true;
+                    continue;
                 }
-				return false;
-			}
-		}
-		for (var i=0; i < g_tanks[TEAM_2].length; i++)
-        {
-			if (this.m_team == TEAM_2 && this.m_id == i)
-            {
-				continue;
-			}
-			var tempTank = g_tanks[TEAM_2][i];
-			if (Math.abs(newX - tempTank.m_x) < 1 && Math.abs(newY - tempTank.m_y) < 1)
-            {
-				return false;
-			}
-		}
+                var tempTank = g_tanks[e][i];
+                if (Math.abs(newX - tempTank.m_x) < 1 && Math.abs(newY - tempTank.m_y) < 1)
+                {
+                    //giap.hoangdinh: Same direction and greater speed => no collision
+
+                    if(tempTank.m_direction == this.m_direction && tempTank.m_speed >= this.m_speed)
+                    {
+                        //return true;
+                    }
+
+                    //if(g_team == e)
+                    {
+                        printf("this.id = " + this.m_id);
+                        printf("... collision with other tanks : tank["+tempTank.m_id+"] = " + tempTank.m_direction + ", this = " + this.m_direction + ". speed1 = " + tempTank.m_speed + ", speed2 = " + this.m_speed + " .");
+                    }
+                    return false;
+                }
+            }
+        }
+        
 		
 		return true;
 	};
@@ -949,16 +1024,17 @@ function Tank()
     
     this.update = function()
     {
-       if( this.path.length === 0 && !( this.m_x === this.target[0] && this.m_y === this.target[1]) )
-       {
-           this.goTo( this.target[0], this.target[1]);
-       }
+        
+        if( this.path.length === 0 && this.target.length && !( this.m_x === this.target[0] && this.m_y === this.target[1]) )
+        {
+            this.goTo( this.target[0], this.target[1]);
+        }
 
-           if(this.m_id == 2)
-           {
-               printf(">>>> Tank 2: path.length: " + this.path.length + ", x = " + this.m_x + ", y = " + this.m_y + ", tx=" + this.target[0] + ", ty="+ this.target[1]);
-               printf(this.path);
-           }
+        //if(this.m_id == 2)
+        {
+            //printf(">>>> Tank 2: path.length: " + this.path.length + ", x = " + this.m_x + ", y = " + this.m_y + ", tx=" + this.target[0] + ", ty="+ this.target[1]);
+            //rintf(this.path);
+        }
        
        // Shoot any where , but my base
        var my_base = $base_main[GetMyTeam()];
@@ -1025,6 +1101,8 @@ function GetMap()
         l[Math.floor(t_y)][Math.ceil(t_x)] = BLOCK_TANK;
         l[Math.ceil(t_y)][Math.floor(t_x)] = BLOCK_TANK;
     }
+    
+    //printf(l);
     
     return l;
 }
@@ -1794,11 +1872,14 @@ function OnPlaceTankRequest()
     
     //var map1 = [[1, 1], [2, 1], [3, 1], [4, 1]].reverse();
     
+    printf("The team " + g_team);
+    
     //Lite to heavy
-    var W = [TANK_LIGHT, TANK_MEDIUM, TANK_HEAVY, TANK_HEAVY];
+    var W = [TANK_MEDIUM, TANK_MEDIUM, TANK_HEAVY, TANK_HEAVY];
     
     $place = {};
-    $place[TEAM_1] = [[7, 1], [6, 1], [5, 1], [4, 1]];
+    //$place[TEAM_1] = [[7, 1], [6, 1], [5, 1], [4, 1]];
+    $place[TEAM_1] = [[7, 1], [5, 1], [7, 20], [5, 20]];
     $place[TEAM_2] = GetOpposite($place[TEAM_1]);
     
     $target = {};
@@ -1816,7 +1897,15 @@ function OnPlaceTankRequest()
     $path[TEAM_1][2] = [[20, 1]];
     $path[TEAM_1][3] = [[20, 1]];
     
-    $point_gold = [[20, 1], [20, 2], [20, 3], [20, 4], [20, 5], [20, 6], [20, 7], [20, 7]];
+    $path[TEAM_2] = [];
+    for(var i = 0; i <  $path[TEAM_1].length; i++)
+    {
+         $path[TEAM_2][i] = GetOpposite( $path[TEAM_1][i]);
+    }
+    
+    $point_gold = {};
+    $point_gold[TEAM_1] = [[20, 4], [20, 5], [20, 6], [20, 7], [20, 8]];
+    $point_gold[TEAM_2] = GetOpposite($point_gold[TEAM_1]);
 
    
     for(var i = 0; i < NUMBER_OF_TANK; i++)
@@ -1845,8 +1934,8 @@ function Update()
         for(var i = 0; i < NUMBER_OF_TANK; i++)
         {
             var t = GetMyTank(i);
-            t.setPath($path[g_team][i]);
-            t.target = $target[g_team][i];
+            t.setPath($path[GetMyTeam()][i]);
+            t.target = $target[GetMyTeam()][i];
         }
         
         $INITED = true;

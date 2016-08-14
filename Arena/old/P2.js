@@ -978,9 +978,8 @@ function OnPlaceTankRequest()
     else if (GetMyTeam() == TEAM_2)
     {
         PlaceTank(TANK_LIGHT, 16, 4);
-        PlaceTank(TANK_MEDIUM, 20, 2);
-        //PlaceTank(TANK_HEAVY, 20, 5);
-        PlaceTank(TANK_HEAVY, 19, 6);
+        PlaceTank(TANK_MEDIUM, 17, 8);
+        PlaceTank(TANK_HEAVY, 20, 5);
         PlaceTank(TANK_HEAVY, 16, 19);
     }
 

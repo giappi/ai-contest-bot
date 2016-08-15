@@ -794,8 +794,8 @@ function Tank()
         printf(">> Tank " + this.m_id + " cal dir = " +DIRECTIONS[dir]);
         if(dir > -1)
         {
-            if( this.m_id == 3)
-            printf("inside Tank " + this.m_id + " is at [" + this.m_x + ", " + this.m_y + "], and will jump to [" + x + ", " + y + "] ");
+            //if( this.m_id == 3)
+            //printf("inside Tank " + this.m_id + " is at [" + this.m_x + ", " + this.m_y + "], and will jump to [" + x + ", " + y + "] ");
             this.m_direction = dir;
             this.goForward();
         }
@@ -806,7 +806,7 @@ function Tank()
         }
         
         //var tile = this.getTileForward();
-        if( this.m_id == 3)
+        if( this.m_id == 2 || this.m_id == 3)
             printf(">>> Tank " + this.m_id + " is at [" + this.m_x + ", " + this.m_y + "], and will jump to [" + x + ", " + y + "] ");
         //printf(`Tank${this.m_id}.getTileForward = ` + BLOCKS[this.getTileForward()] + ", dir=" + DIRECTIONS[this.m_direction]);
         
@@ -834,15 +834,7 @@ function Tank()
             newX = this.m_x + this.m_speed;
         }
 
-        // Round up on a square, because, in javascript, sometimes:
-        // 0.2 + 0.2 + 0.2 + 0.2 + 0.2 = 0.9999999...
-        // Lol... ^^
-        if (newX % 1 < 0.05) newX = (newX >> 0);
-        if (newX % 1 > 0.95) newX = (newX >> 0) + 1;
-        if (newY % 1 < 0.05) newY = (newY >> 0);
-        if (newY % 1 > 0.95) newY = (newY >> 0) + 1;
-        
-       
+
 
         // Check to see if that position is valid (no collision)
         newPositionOK = this.CheckForCollision(newX, newY) ;
@@ -948,6 +940,17 @@ function Tank()
     
 	this.CheckForCollision = function (newX, newY)
     {
+
+
+		// Round up on a square, because, in javascript, sometimes:
+        // 0.2 + 0.2 + 0.2 + 0.2 + 0.2 = 0.9999999...
+        // Lol... ^^
+        if (newX % 1 < 0.05) newX = (newX >> 0);
+        if (newX % 1 > 0.95) newX = (newX >> 0) + 1;
+        if (newY % 1 < 0.05) newY = (newY >> 0);
+        if (newY % 1 > 0.95) newY = (newY >> 0) + 1;
+
+
 		// Check landscape
 		var roundedX = newX >> 0;
 		var roundedY = newY >> 0;
@@ -1009,19 +1012,12 @@ function Tank()
                     continue;
                 }
                 var tempTank = g_tanks[e][i];
-                if (Math.abs(newX - tempTank.m_x) < 1 && Math.abs(newY - tempTank.m_y) < 1)
+                if (Math.abs(newX - tempTank.m_x) < 0.99999 && Math.abs(newY - tempTank.m_y) < 0.99999)
                 {
-                    //giap.hoangdinh: Same direction and greater speed => no collision
-
-                    if(tempTank.m_direction == this.m_direction && tempTank.m_speed >= this.m_speed)
-                    {
-                        //return true;
-                    }
-
                     //if(g_team == e)
                     {
-                        printf("this.id = " + this.m_id);
-                        printf("... collision with other tanks : tank["+tempTank.m_id+"].dir = " + tempTank.m_direction + ", this.dir = " + this.m_direction);
+                        printf("... tank " + this.m_id + " collision with tank "+ tempTank.m_id + ",  direction = " + DIRECTIONS[tempTank.m_direction] + ",  " + DIRECTIONS[this.m_direction]);
+                        printf("[NewX, NewY] = [" + newX + ", " + newY + "] , [tempTank.m_x, tempTank.m_y] = [" + tempTank.m_x + ", " + tempTank.m_y + "]");
                     }
                     return false;
                 }

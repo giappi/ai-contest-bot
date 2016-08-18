@@ -476,7 +476,7 @@ var DecodeFloat32 = function(string, offset)
 function printf(o)
 {
     // hg
-    //if(0)
+    if(0)
     {
         console.log(o);
     }
@@ -510,7 +510,7 @@ function Block(x , y , block_type)
 {
     this.x = x || 0;
     this.y = y || 0;
-    this.blockType = block_type || BLOCK_GROUND;
+    this.type = block_type || BLOCK_GROUND;
 }
 
 function Tank()
@@ -1058,6 +1058,10 @@ function Tank()
        {
            this.shoot();
        }
+
+       /* Look around, if dectect dangerous, shoot */
+       
+
        
        // shoot at your base
        var your_base = $base_main[GetOpponentTeam()];

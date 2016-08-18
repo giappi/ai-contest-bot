@@ -88,6 +88,37 @@ function ParticleDef() {
 		return emitter;
 	}
 	
+	this.CreateShellTrailEmitter = function () {
+		var source = new SourceRect(0, 0, 0, 50, 50);
+		source.m_id = g_graphicEngine.LoadImage("Image/Particle/HotTrail.png");
+		
+		var particle = new Particle();
+		particle.m_sourceRectArray[0] = source;
+		particle.m_resistant = 0.005;
+		particle.m_fadeSpeed = -0.002;
+		particle.m_alpha = 1;
+		particle.m_w = 50;
+		particle.m_h = 50;
+		particle.m_lifeTime = 500;
+		particle.m_drawAdd = true;
+		particle.m_scaleSpeed = -0.002
+		
+		var emitter = g_particleEngine.CreateEmitter();
+		emitter.SetSampleParticle (particle);
+		emitter.m_randomizeAngleMin = 0;
+		emitter.m_randomizeAngleMax = 360;
+		emitter.m_randomizeRotateSpeedMin = -0.1;
+		emitter.m_randomizeRotateSpeedMax = 0.1;
+		emitter.m_randomizeScaleMin = 0.8;
+		emitter.m_randomizeScaleMax = 0.8;
+		emitter.m_emitForceMin = 0.1;
+		emitter.m_emitForceMax = 0.12;
+		emitter.m_emitRate = 0.06;
+		emitter.Start();
+		
+		return emitter;
+	}
+	
 	this.CreateFragScatteringEmitter = function () {
 		var source = new SourceRect(0, 0, 0, 50, 50);
 		source.m_id = g_graphicEngine.LoadImage("Image/Particle/Frag.png");

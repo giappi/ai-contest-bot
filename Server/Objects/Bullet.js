@@ -41,21 +41,54 @@ module.exports = function Bullet (game, team, id) {
 			
 			// No tank slammed into the bullet
 			if (this.m_live) {
-				if (this.m_direction == Enum.DIRECTION_UP) {
-					this.m_y = this.m_y - this.m_speed;
+				if (this.m_speed > 1) {
+					if (this.m_direction == Enum.DIRECTION_UP) {
+						this.m_y = this.m_y - 1;
+					}
+					else if (this.m_direction == Enum.DIRECTION_DOWN) {
+						this.m_y = this.m_y + 1;
+					}
+					else if (this.m_direction == Enum.DIRECTION_LEFT) {
+						this.m_x = this.m_x - 1;
+					}
+					else if (this.m_direction == Enum.DIRECTION_RIGHT) {
+						this.m_x = this.m_x + 1;
+					}
 				}
-				else if (this.m_direction == Enum.DIRECTION_DOWN) {
-					this.m_y = this.m_y + this.m_speed;
-				}
-				else if (this.m_direction == Enum.DIRECTION_LEFT) {
-					this.m_x = this.m_x - this.m_speed;
-				}
-				else if (this.m_direction == Enum.DIRECTION_RIGHT) {
-					this.m_x = this.m_x + this.m_speed;
+				else {
+					if (this.m_direction == Enum.DIRECTION_UP) {
+						this.m_y = this.m_y - this.m_speed;
+					}
+					else if (this.m_direction == Enum.DIRECTION_DOWN) {
+						this.m_y = this.m_y + this.m_speed;
+					}
+					else if (this.m_direction == Enum.DIRECTION_LEFT) {
+						this.m_x = this.m_x - this.m_speed;
+					}
+					else if (this.m_direction == Enum.DIRECTION_RIGHT) {
+						this.m_x = this.m_x + this.m_speed;
+					}
 				}
 				
 				// Check to see if that position is valid (no collision)
 				this.CheckForCollision();
+				
+				
+				if (this.m_speed > 1 && this.m_live == true) {
+					if (this.m_direction == Enum.DIRECTION_UP) {
+						this.m_y = this.m_y - (this.m_speed - 1);
+					}
+					else if (this.m_direction == Enum.DIRECTION_DOWN) {
+						this.m_y = this.m_y + (this.m_speed - 1);
+					}
+					else if (this.m_direction == Enum.DIRECTION_LEFT) {
+						this.m_x = this.m_x - (this.m_speed - 1);
+					}
+					else if (this.m_direction == Enum.DIRECTION_RIGHT) {
+						this.m_x = this.m_x + (this.m_speed - 1);
+					}
+					this.CheckForCollision();
+				}
 			}
 		}
 	}

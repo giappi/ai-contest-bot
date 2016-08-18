@@ -38,6 +38,10 @@ function Bullet (game, id, team) {
 	whiteSmoke.m_x = 0;
 	whiteSmoke.m_y = 0;
 	
+	var shellTrail = g_particleDef.CreateShellTrailEmitter();
+	shellTrail.m_x = 0;
+	shellTrail.m_y = 0;
+	
 	
 	// Add a state in a specific time
 	this.AddDataAnchor = function (time, type, x, y, dir, live, hit) {
@@ -142,15 +146,24 @@ function Bullet (game, id, team) {
 			
 			if (this.m_type == TANK_HEAVY) {
 				whiteSmoke.Pause();
+				shellTrail.Pause();
 			}
-			else {
+			else if (this.m_type == TANK_MEDIUM) {
 				whiteSmoke.Resume();
 				whiteSmoke.m_x = (this.m_x + 0.5) * BLOCK_SIZE;
 				whiteSmoke.m_y = (this.m_y + 0.5) * BLOCK_SIZE;
 			}
+			else if (this.m_type == TANK_LIGHT) {
+
+					shellTrail.Resume();
+					shellTrail.m_x = (this.m_x + 0.5) * BLOCK_SIZE;
+					shellTrail.m_y = (this.m_y + 0.5) * BLOCK_SIZE;
+
+			}
 		}
 		else {
 			whiteSmoke.Pause();
+			shellTrail.Pause();
 		}
 	}
 }

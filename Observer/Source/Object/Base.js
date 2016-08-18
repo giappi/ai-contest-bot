@@ -1,6 +1,6 @@
 function Base (game, id, team, type) {
 	var BASE_MAX_HP = new Array();
-	BASE_MAX_HP [BASE_MAIN] = 300;
+	BASE_MAX_HP [BASE_MAIN] = 400;
 	BASE_MAX_HP [BASE_SIDE] = 200;
 	
 	var HP_BAR_OFFSET = -5;

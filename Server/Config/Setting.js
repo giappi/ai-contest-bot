@@ -19,20 +19,20 @@ var BULLET_SPEED = new Array();
 
 TANK_HP [Enum.TANK_LIGHT] = 80;
 TANK_SPEED [Enum.TANK_LIGHT] = 0.5;
-TANK_DAMAGE [Enum.TANK_LIGHT] = 40;
-TANK_ROF [Enum.TANK_LIGHT] = 20; // DPS = Dam * 10 / Cooldown = 40 * 10 / 20 = 20;
-BULLET_SPEED [Enum.TANK_LIGHT] = 1;
+TANK_DAMAGE [Enum.TANK_LIGHT] = 50;
+TANK_ROF [Enum.TANK_LIGHT] = 20; // DPS = Dam * 10 / Cooldown = 50 * 10 / 20 = 25;
+BULLET_SPEED [Enum.TANK_LIGHT] = 1.2;
 
-TANK_HP [Enum.TANK_MEDIUM] = 100;
+TANK_HP [Enum.TANK_MEDIUM] = 110;
 TANK_SPEED [Enum.TANK_MEDIUM] = 0.25;
-TANK_DAMAGE [Enum.TANK_MEDIUM] = 30;
-TANK_ROF [Enum.TANK_MEDIUM] = 10; // DPS = Dam * 10 / Cooldown = 30 * 10 / 10 = 30;
+TANK_DAMAGE [Enum.TANK_MEDIUM] = 40;
+TANK_ROF [Enum.TANK_MEDIUM] = 10; // DPS = Dam * 10 / Cooldown = 40 * 10 / 10 = 40;
 BULLET_SPEED [Enum.TANK_MEDIUM] = 1;
 
-TANK_HP [Enum.TANK_HEAVY] = 150;
+TANK_HP [Enum.TANK_HEAVY] = 170;
 TANK_SPEED [Enum.TANK_HEAVY] = 0.2;
-TANK_DAMAGE [Enum.TANK_HEAVY] = 8;
-TANK_ROF [Enum.TANK_HEAVY] = 2; // DPS = Dam * 10 / Cooldown = 8 * 10 / 2 = 40;
+TANK_DAMAGE [Enum.TANK_HEAVY] = 7;
+TANK_ROF [Enum.TANK_HEAVY] = 2; // DPS = Dam * 10 / Cooldown = 7 * 10 / 2 = 35;
 BULLET_SPEED [Enum.TANK_HEAVY] = 0.8;
 
 exports.TANK_HP = TANK_HP;
@@ -85,7 +85,7 @@ exports.BASE_POSITION_2 = [[19.5, 10.5], [17.5, 3.5], [17.5, 17.5]];
 exports.BASE_SIZE 		= 2;
 
 var BASE_HP = new Array();
-BASE_HP[Enum.BASE_MAIN] = 300;
+BASE_HP[Enum.BASE_MAIN] = 400;
 BASE_HP[Enum.BASE_SIDE] = 200;
 exports.BASE_HP = BASE_HP;
 

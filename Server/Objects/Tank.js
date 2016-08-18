@@ -154,8 +154,7 @@ module.exports = function Tank (game, id, x, y, team, type) {
 		}
 		
 		// Check if that square is invalid
-		for (var i=0; i<squareNeedToCheckX.length; i++)
-        {
+		for (var i=0; i<squareNeedToCheckX.length; i++) {
 			var x = squareNeedToCheckX[i];
 			var y = squareNeedToCheckY[i];
 			if (game.m_map[y * Setting.MAP_W + x] == Enum.BLOCK_WATER

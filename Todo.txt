@@ -1,2 +1,4 @@
 
 Kiểm tra va chạm
+
+bug: http://han-ai-contest2016.gameloft.com/replay-viewer/?category=0&match_id=1049

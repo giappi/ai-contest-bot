@@ -1,3 +1,8 @@
+
+
+
+
+
 // Stuff...
 var Enum = require("./Config/Enum");
 var Setting = require("./Config/Setting");
@@ -10,6 +15,8 @@ var Bullet = require("./Objects/Bullet");
 var Base = require("./Objects/Base");
 var PowerUp = require("./Objects/PowerUp")
 var Strike = require("./Objects/Strike");
+
+
 
 // Require filesystem
 var fs = require('fs');

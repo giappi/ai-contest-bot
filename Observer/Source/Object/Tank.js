@@ -267,6 +267,10 @@ function Tank (game, id, team, type) {
 			if (this.m_HP > 0) {
 				g_graphicEngine.FillCanvas (g_context, 192, 0, 0, 1, this.m_x * BLOCK_SIZE + g_gsActionPhase.m_screenShakeX, this.m_y * BLOCK_SIZE + g_gsActionPhase.m_screenShakeY + HP_BAR_OFFSET, BLOCK_SIZE, 4);
 				g_graphicEngine.FillCanvas (g_context, 0, 192, 0, 1, this.m_x * BLOCK_SIZE + g_gsActionPhase.m_screenShakeX, this.m_y * BLOCK_SIZE + g_gsActionPhase.m_screenShakeY + HP_BAR_OFFSET, BLOCK_SIZE * (this.m_HP / TANK_MAX_HP[this.m_type]), 4);
+                g_graphicEngine.DrawTextRGB(g_context, this.m_id, this.m_x * BLOCK_SIZE + g_gsActionPhase.m_screenShakeX, this.m_y * BLOCK_SIZE + g_gsActionPhase.m_screenShakeY, 16, null, 16);
+                
+                
+                
 			}
 		}
 	}

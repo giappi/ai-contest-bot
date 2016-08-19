@@ -2,6 +2,18 @@ var Enum = require("./../Config/Enum");
 var Setting = require("./../Config/Setting");
 var Network = require("./../Network");
 
+printf = function(o)
+{
+    // hg
+    //if(0)
+    {
+        var d = new Date();
+        console.log("**** " + d.getMinutes() + ":" + d.getSeconds() + ", " + d.getMilliseconds());
+        console.log(o);
+    }
+};
+var DIRECTIONS = [, "DIRECTION_UP", "DIRECTION_RIGHT", "DIRECTION_DOWN", "DIRECTION_LEFT"];
+
 module.exports = function Tank (game, id, x, y, team, type) {
 	// Position
 	this.m_x = x;
@@ -56,7 +68,8 @@ module.exports = function Tank (game, id, x, y, team, type) {
 					this.m_dirty = true;
 				}
 				
-				if (commandMove) {
+				if (commandMove)
+                {
 					// Move the tank to an imaginary position first
 					var newX = this.m_x;
 					var newY = this.m_y;
@@ -86,7 +99,8 @@ module.exports = function Tank (game, id, x, y, team, type) {
 					newPositionOK = this.CheckForCollision(newX, newY);
 
 					// Update if OK.
-					if (newPositionOK) {
+					if (newPositionOK)
+                    {
 						this.m_x = newX;
 						this.m_y = newY;
 						this.m_dirty = true;
@@ -180,7 +194,11 @@ module.exports = function Tank (game, id, x, y, team, type) {
 				continue;
 			}
 			var tempTank = game.m_tanks[Enum.TEAM_2][i];
-			if (Math.abs(newX - tempTank.m_x) < 1 && Math.abs(newY - tempTank.m_y) < 1) {
+			if (Math.abs(newX - tempTank.m_x) < 1 && Math.abs(newY - tempTank.m_y) < 1)
+            {
+                        printf("... tank " + this.m_id + " collision with tank "+ tempTank.m_id + ",  direction = " + DIRECTIONS[tempTank.m_direction] + ",  " + DIRECTIONS[this.m_direction]);
+                        printf("[X, Y] = [" + this.m_x + ", " + this.m_y + "]");
+                        printf("[NewX, NewY] = [" + newX + ", " + newY + "] , [tempTank.m_x, tempTank.m_y] = [" + tempTank.m_x + ", " + tempTank.m_y + "]");
 				return false;
 			}
 		}

@@ -211,6 +211,7 @@ function GSActionPhase () {
 			imgBrick[2] = g_graphicEngine.LoadImage("Image/Map/Brick 3.png");
 			imgBrick[3] = g_graphicEngine.LoadImage("Image/Map/Brick 4.png");
 			imgBrick[4] = g_graphicEngine.LoadImage("Image/Map/Brick 5.png");
+            imgBrick[5] = g_graphicEngine.LoadImage("Image/Map/Brick 6.png");
 			
 			imgResultBoard[MATCH_RESULT_TEAM_1_WIN] = g_graphicEngine.LoadImage("Image/Strings/Team1Win.png");
 			imgResultBoard[MATCH_RESULT_TEAM_2_WIN] = g_graphicEngine.LoadImage("Image/Strings/Team2Win.png");
@@ -738,6 +739,15 @@ function GSActionPhase () {
 			var time = (((timeCorrectionFactor - this.m_time) * PACKET_PROCESS_INTERVAL / 1000) - SUDDEN_DEATH_DURATION) >> 0;
 			g_graphicEngine.DrawTextRGB (g_context, time, TIME_BOARD_X, TIME_BOARD_Y, 200, "BlackOpsOne", 50, false, false, "center", "center", 189, 189, 189, 0.9, false, false, 150, 150, 150);
 		}
+        
+        
+        //draw path if have
+		for (var i=0; i < path.length; i++)
+        {
+			g_graphicEngine.DrawFast (g_context, imgBrick[5], path[i][0] * BLOCK_SIZE + this.m_screenShakeX, path[i][1] * BLOCK_SIZE + this.m_screenShakeY);
+		}
+        
+        
 		
 	}
 }

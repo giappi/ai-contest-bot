@@ -1,0 +1,25 @@
+
+
+Tank 0 -> update();
+>> Tank 0 cal dir = DIRECTION_UP
+>>> Tank 0 is at [20, 5], and will jump to [20, 4]
+Tank 0 -> update() finished.
+
+
+Tank 0 -> update();
+>> Tank 0 cal dir = DIRECTION_UP
+>>> Tank 0 is at [20, 5.5], and will jump to [20, 4]
+Tank 0 -> update() finished.
+
+
+Tank 0 -> update();
+>> Tank 0 cal dir = DIRECTION_UP
+>>> Tank 0 is at [20, 6], and will jump to [20, 4]
+Tank 0 -> update() finished.
+
+
+
+Tank 0 -> update();
+>> Tank 0 cal dir = DIRECTION_UP
+>>> Tank 0 is at [20, 6.5], and will jump to [20, 4]
+Tank 0 -> update() finished.

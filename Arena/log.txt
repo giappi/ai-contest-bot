@@ -1,2 +1,3 @@
 Socket connected
-Socket error: Error: read ECONNRESET
+Socket error: Error: write ECONNRESET
+Socket error: Error: This socket is closed.

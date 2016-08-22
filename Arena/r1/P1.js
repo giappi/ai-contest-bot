@@ -3,6 +3,14 @@
 // pathStart and pathEnd are arrays like [5,10]
 function findPath(world, pathStart, pathEnd)
 {
+	// shortcuts for speed
+    /*
+	var	abs = Math.abs;
+	var	max = Math.max;
+	var	pow = Math.pow;
+	var	sqrt = Math.sqrt;
+    */
+
 	// the world data are integers:
 	// anything higher than this number is considered blocked
 	// this is handy is you use numbered sprites, more than one
@@ -73,30 +81,22 @@ function findPath(world, pathStart, pathEnd)
 	function Neighbours(x, y)
 	{
 		var	N = y - 1,
-            S = y + 1,
-            E = x + 1,
-            W = x - 1,
-            myN = N > -1 && canWalkHere(x, N),
-            myS = S < worldHeight && canWalkHere(x, S),
-            myE = E < worldWidth && canWalkHere(E, y),
-            myW = W > -1 && canWalkHere(W, y),
+		S = y + 1,
+		E = x + 1,
+		W = x - 1,
+		myN = N > -1 && canWalkHere(x, N),
+		myS = S < worldHeight && canWalkHere(x, S),
+		myE = E < worldWidth && canWalkHere(E, y),
+		myW = W > -1 && canWalkHere(W, y),
 		result = [];
 		if(myN)
-        {
-            result.push({x:x, y:N});
-        }
+		result.push({x:x, y:N});
 		if(myE)
-		{
-            result.push({x:E, y:y});
-        }
+		result.push({x:E, y:y});
 		if(myS)
-        {
-            result.push({x:x, y:S});
-        }
+		result.push({x:x, y:S});
 		if(myW)
-        {
-            result.push({x:W, y:y});
-        }
+		result.push({x:W, y:y});
 		findNeighbours(myN, myS, myE, myW, N, S, E, W, result);
 		return result;
 	}
@@ -476,7 +476,7 @@ var DecodeFloat32 = function(string, offset)
 function printf(o)
 {
     // hg
-    if(0)
+    //if(0)
     {
         //var d = new Date();
         //console.log("**** " + d.getMinutes() + ":" + d.getSeconds() + ", " + d.getMilliseconds());
@@ -856,7 +856,7 @@ function Tank()
         var dx = x - this.m_x;
         var dy = y - this.m_y;
 
-        return dx > 0 && Math.abs(dy/dx) < 1 ? DIRECTION_RIGHT : dx < 0 && Math.abs(dy/dx) < 1 ? DIRECTION_LEFT : dy > 0 && Math.abs(dx/dy) < 1 ? DIRECTION_DOWN : dy < 0 && Math.abs(dx/dy) < 1 ? DIRECTION_UP : -1;
+        return dx > 0 ? DIRECTION_RIGHT : dx < 0 ? DIRECTION_LEFT : dy > 0 ? DIRECTION_DOWN : dy < 0 ? DIRECTION_UP : -1;
     };
     
     // Đi đến một vị trí bất kì.
@@ -935,7 +935,6 @@ function Tank()
     
     this.shoot = function(b)
     {
-        b = (b !== undefined) ? b : 1;
         shooting = true;
     };
     
@@ -1049,60 +1048,27 @@ function Tank()
             //printf(">>>> Tank 2: path.length: " + this.path.length + ", x = " + this.m_x + ", y = " + this.m_y + ", tx=" + this.target[0] + ", ty="+ this.target[1]);
             //rintf(this.path);
         }
-        
-        
-        
-        /* SHOOT ENEMY TANK IF SEE IT */
-        var dangerous = false;
-        var enemys = GetEnemyList();
-        var count_enemy;
-        for(var i in enemys)
-        {
-            var tank = enemys[i];
-            if( Math.abs( this.getX() - tank.getX()) < 0.5 || Math.abs( this.getY() - tank.getY()) < 0.5)
-            {
-                if( tank.m_HP > 0)
-                {
-                    if(this.canBeSee(tank.getX(), tank.getY()))
-                    {
-                        count_enemy++;
-                        // shoot at first tank that I see
-                        this.setDirection( this.calcLineDirectionTo(tank.getX(), tank.getY()));
-                        printf(this.m_id + " see tank " + tank.m_id + " .Set direction to " + DIRECTIONS[this.getDirection()]);
-                        printf("From [" + this.m_x + ", " + this.m_y + "] to [" + tank.m_x + ", " + tank.m_y + "].");
-                        this.shoot(true);
-                        dangerous = true;
-                        break;
-                    }
-                }
-            }
-        }
 
-
-        
 
        /**********************************
         **            MOVE              **
         **********************************/        
         //console.log("target[0] = " + target[0] + ", target[1] = " + target[1] + ", t.getX() = " + t.getX() + ", t.getY() = " + t.getY());
-        if( dangerous == false)
+        while(this.path.length > 0)
         {
-            while(this.path.length > 0)
+            // get next position
+            var next = this.path[this.path.length-1];
+            // Get next position is current is my position
+            if(next[0] == this.getX() && next[1] == this.getY())
             {
-                // get next position
-                var next = this.path[this.path.length-1];
-                // Get next position is current is my position
-                if(next[0] == this.getX() && next[1] == this.getY())
-                {
-                    this.path.pop();
-                    //get next target
-                    next = this.path[this.path.length-1];
-                }
-                else
-                {
-                    this.jumpTo(next[0], next[1]);
-                    break;
-                }
+                this.path.pop();
+                //get next target
+                next = this.path[this.path.length-1];
+            }
+            else
+            {
+                this.jumpTo(next[0], next[1]);
+                break;
             }
         }
         
@@ -1116,7 +1082,7 @@ function Tank()
        var my_base = $base_main[GetMyTeam()];
        if( this.m_x !== my_base[0])
        {
-           //this.shoot();
+           this.shoot();
        }
 
        /* Look around, if dectect dangerous, shoot */
@@ -1135,47 +1101,6 @@ function Tank()
        printf("Tank "+this.m_id+" -> update() finished.\n\n");
        
     };
-    
-    
-    
-    this.canBeSee = function(t_x, t_y)
-    {
-        //printf("Direction: " + direction + ", " + DIRECTIONS[direction]);
-        var d = this.calcLineDirectionTo(t_x, t_y)%4; // [left, top, right, bottom][d]
-        //printf("d = " + d);
-        var vertical = d%2;
-        
-        var tile, i, x0 = this.m_x + 0.5 >> 0, y0 = this.m_y + 0.5 >> 0;
-        var begin = vertical ? y0 : x0;
-        var end   = vertical ? t_y + 0.5 >> 0 : t_x + 0.5 >> 0;
-        printf("d = " + d);
-        var delta = [[-1, 0], [0, -1], [1, 0], [0, 1]][d][vertical];
-        
-        printf("From : " + begin + " to " + (delta > 0 ? end : 0));
-
-        var trace = [];
-        //printf("vertical = " + vertical + ", For i = " + begin + ", delta =" + L[d][vertical]);
-        var visible = true;
-        for(i = begin; delta > 0 ? i <= end : 0 <= i; i += delta)
-        {
-            trace.push(!vertical ? [i, y0] : [x0, i]);
-            tile = !vertical ? GetBrickAt(i, y0) : GetBrickAt(x0, i);
-            //check for enemy tank
-
-            //printf("tile[" + (vertical ? x0 : i) + "][" + (vertical ? i : y0) + "] = " + tile + ", " + BLOCKS[tile]);
-            if(!(tile == BLOCK_GROUND || tile == BLOCK_WATER))
-            {
-                visible = false;
-                break;
-            }
-        }
-        console.log("Can be see: ");
-        console.log(trace);
-        
-        return visible;
-        
-    };
-    
     
    
 }
@@ -1897,19 +1822,6 @@ function GetTileAt(x, y)
     //return l[Math.ceil(y) * MAP_W + Math.ceil(x)];
     return GetMap()[y][x];
 }
-
-/*
- * Get Brick on map at [x, y]
- * @param {int} x
- * @param {int} y
- * @returns {int}
- */
-function GetBrickAt(x, y)
-{
-    return g_map[y * MAP_W + x];
-}
-
-
 function GetObstacleList() {
 	// Return the obstacle list, both destructible, and the non destructible
 	// This does not return water type tile.
@@ -1933,7 +1845,10 @@ function GetMyTeam()
 
 function GetOpponentTeam()
 {
-    return g_team == TEAM_1 ? TEAM_2 : TEAM_1;
+    if (g_team == TEAM_1)
+        return TEAM_2;
+    else
+        return TEAM_1;
 }
 
 function GetMyTank(id)
@@ -2037,7 +1952,7 @@ function OnPlaceTankRequest()
     printf("The team " + g_team);
     
     //Lite to heavy
-    var W = [TANK_HEAVY, TANK_HEAVY, TANK_HEAVY, TANK_HEAVY];
+    var W = [TANK_LIGHT, TANK_MEDIUM, TANK_HEAVY, TANK_HEAVY];
     
     $place = {};
     //$place[TEAM_1] = [[7, 1], [6, 1], [5, 1], [4, 1]];
@@ -2204,10 +2119,12 @@ function Update()
         // Don't waste effort if tank was dead
         if (t && t.m_HP > 0)
         {
-            // update
+            //console.log(`Tank ${t.m_id} : path.length: ${t.path.length}`);
+            //console.log("t.path.length: " + t.path.length);
+            //
             t.update();
   
-            // send request
+            //send request
             t.sendCommand();
         }
 

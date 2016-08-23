@@ -1,10 +1,23 @@
 
 /* global process */
 
+
+
+var performance =
+{
+    "now" : function()
+    {
+        var t = process.hrtime();
+        return t[0] + t[1]/1e9;
+    }
+};
+
+
 // world is a 2d array of integers (eg world[10][15] = 0)
 // pathStart and pathEnd are arrays like [5,10]
 function findPath(world, pathStart, pathEnd)
 {
+    var t0 = performance.now();
 	// the world data are integers:
 	// anything higher than this number is considered blocked
 	// this is handy is you use numbered sprites, more than one
@@ -258,6 +271,9 @@ function findPath(world, pathStart, pathEnd)
 		return result;
 	}
 
+    var t1 = performance.now();
+    
+    printf("Find path take " + (t1 - t0) + " s.\n");
 	// actually calculate the a-star path!
 	// this returns an array of coordinates
 	// that is empty if no path is possible
@@ -302,6 +318,9 @@ var BLOCK_WATER = 1;
 var BLOCK_HARD_OBSTACLE = 2;
 var BLOCK_SOFT_OBSTACLE = 3;
 var BLOCK_BASE = 4;
+
+// Đo mức độ cản trở của khối
+var BLOCK_OBSTACLNESS = [0, 0, 99, 1, 99];
 
 var BLOCK_TANK = 5;
 var BLOCKS = ["BLOCK_GROUND", "BLOCK_WATER", "BLOCK_HARD_OBSTACLE", "BLOCK_SOFT_OBSTACLE", "BLOCK_BASE", "TANK", "block 6"];
@@ -478,11 +497,11 @@ var DecodeFloat32 = function(string, offset)
 function printf(o)
 {
     // hg
-    if(0)
+    //if(0)
     {
         //var d = new Date();
         //console.log("**** " + d.getMinutes() + ":" + d.getSeconds() + ", " + d.getMilliseconds());
-        console.log(o);
+        console.log.apply(0, arguments);
     }
 }
 
@@ -709,10 +728,14 @@ function Tank()
         var tile, i, x0 = this.m_x + 0.5 | 0, y0 = this.m_y + 0.5 | 0;
         var begin = vertical ? y0 : x0;
         var end   = vertical ? MAP_H : MAP_W;
-
+        printf("d = " + d);
+        var delta = [[-1, 0], [0, -1], [1, 0], [0, 1]][d][vertical];
         
+        printf("From : " + begin + " to " + end);
+
         //printf("vertical = " + vertical + ", For i = " + begin + ", delta =" + L[d][vertical]);
-        for(i = begin; 0 <= i && i < end; i += [[-1, 0], [0, -1], [1, 0], [0, 1]][d][vertical])
+
+        for(i = begin; delta > 0 ? i <= end : end <= i; i += delta)
         {
             tile = !vertical ? GetTileAt(i, y0, this.m_id) : GetTileAt(x0, i, this.m_id);
             //check for enemy tank
@@ -740,18 +763,18 @@ function Tank()
         // Chia làm 2 đường thẳng nếu đường đi là đường chéo
         if( (x - this.m_x)*(y - this.m_y) != 0)
         {
-            printf("\n");
-            printf("View here: ");
-            printf("path: ");
-            printf(this.path);
+            //printf("\n");
+            //printf("View here: ");
+            //printf("path: ");
+            //printf(this.path);
             var p = this.path.pop();
-            printf("Tank " + this.m_id + " is at [" + this.m_x + ", " + this.m_y + "]  to [" + x + ", " + y + "] ");
-            printf(">> Split path: Tank" + this.m_id + " , p = [" + p.toString() + "]");
+            //printf("Tank " + this.m_id + " is at [" + this.m_x + ", " + this.m_y + "]  to [" + x + ", " + y + "] ");
+            //printf(">> Split path: Tank" + this.m_id + " , p = [" + p.toString() + "]");
             if( this.CheckForCollision(this.m_x, p[1]))
             {
                 this.path.push([p[0], p[1]]);
                 this.path.push([this.m_x, p[1]]);
-                printf("Path X selected.");
+                //printf("Path X selected.");
                 printf(this.path);
             }
             else
@@ -759,16 +782,16 @@ function Tank()
             {
                 this.path.push([p[0], p[1]]);
                 this.path.push([p[0], this.m_y]);
-                printf("Path Y selected.");
+                //printf("Path Y selected.");
                 printf(this.path);
 
             }
             else
             {
                 this.path.push(p);
-                printf("No path can be selected.");
+                //printf("No path can be selected.");
             }
-            printf("End view.\n");
+            //printf("End view.\n");
             return;
         }
         
@@ -1027,11 +1050,18 @@ function Tank()
 		return true;
 	};
     
+    this.getPathDirection = function()
+    {
+        if(this.path.length > 0)
+        {
+            return this.calcLineDirectionTo(this.path[this.path.length-1][0], this.path[this.path.length-1][1]);
+        }
+        return this.m_direction;
+    }
     
     this.update = function()
     {
-        printf("\n\n");
-        printf("Tank "+this.m_id+" -> update();");
+        //printf("\n\nTank "+this.m_id+" -> update();");
         
         // go to enemy base
         if( this.path.length == 0 && this.target.length && !( this.m_x == this.target[0] && this.m_y == this.target[1]) )
@@ -1055,7 +1085,7 @@ function Tank()
         /* Look around, if dectect dangerous, shoot */
         var dangerous = false;
         var enemys = GetEnemyList();
-        var count_enemy;
+        var count_enemy = 0;
         for(var i in enemys)
         {
             var tank = enemys[i];
@@ -1068,10 +1098,18 @@ function Tank()
                         count_enemy++;
                         // shoot at first tank that I see
                         this.setDirection( this.calcLineDirectionTo(tank.getX(), tank.getY()));
-                        printf(this.m_id + " see tank " + tank.m_id + " .Set direction to " + DIRECTIONS[this.getDirection()]);
+                        printf(this.m_id + " saw tank " + tank.m_id + " .Set direction to " + DIRECTIONS[this.getDirection()]);
                         printf("From [" + this.m_x + ", " + this.m_y + "] to [" + tank.m_x + ", " + tank.m_y + "].");
                         this.shoot(true);
-                        dangerous = true;
+                        // keep moving if their direction in a line
+                        if(this.getPathDirection()%4%2 == tank.getDirection()%4%2)
+                        {
+                            dangerous = false;
+                        }
+                        else
+                        {
+                            dangerous = true;
+                        }
                         break;
                     }
                 }
@@ -1083,7 +1121,7 @@ function Tank()
 
        /**********************************
         **            MOVE              **
-        **********************************/        
+        **********************************/
         //console.log("target[0] = " + target[0] + ", target[1] = " + target[1] + ", t.getX() = " + t.getX() + ", t.getY() = " + t.getY());
         if( dangerous == false)
         {
@@ -1141,7 +1179,7 @@ function Tank()
     
     this.canBeSee = function(t_x, t_y)
     {
-        //printf("Direction: " + direction + ", " + DIRECTIONS[direction]);
+
         var d = this.calcLineDirectionTo(t_x, t_y)%4; // [left, top, right, bottom][d]
         //printf("d = " + d);
         var vertical = d%2;
@@ -1154,12 +1192,12 @@ function Tank()
         
         printf("From : " + begin + " to " + end);
 
-        var trace = [];
+        //var trace = [];
         //printf("vertical = " + vertical + ", For i = " + begin + ", delta =" + L[d][vertical]);
         var visible = true;
         for(i = begin; delta > 0 ? i <= end : end <= i; i += delta)
         {
-            trace.push(!vertical ? [i, y0] : [x0, i]);
+            //trace.push(!vertical ? [i, y0] : [x0, i]);
             tile = !vertical ? GetBrickAt(i, y0) : GetBrickAt(x0, i);
             //check for enemy tank
 
@@ -1171,11 +1209,50 @@ function Tank()
             }
         }
         printf("Can be see: ");
-        printf(trace);
+        //printf(trace);
         
         return visible;
         
     };
+    
+    
+    this.coutObstaclesFrom = function(t_x, t_y)
+    {
+
+        var d = this.calcLineDirectionTo(t_x, t_y)%4; // [left, top, right, bottom][d]
+        //printf("d = " + d);
+        var vertical = d%2;
+        
+        var tile, i, x0 = this.m_x + 0.5 >> 0, y0 = this.m_y + 0.5 >> 0;
+        var begin = vertical ? y0 : x0;
+        var end   = vertical ? t_y + 0.5 >> 0 : t_x + 0.5 >> 0;
+        printf("d = " + d);
+        var delta = [[-1, 0], [0, -1], [1, 0], [0, 1]][d][vertical];
+        
+        printf("From : " + begin + " to " + end);
+
+        //var trace = [];
+        //printf("vertical = " + vertical + ", For i = " + begin + ", delta =" + L[d][vertical]);
+        var price = 0;
+        for(i = begin; delta > 0 ? i <= end : end <= i; i += delta)
+        {
+            //trace.push(!vertical ? [i, y0] : [x0, i]);
+            tile = !vertical ? GetBrickAt(i, y0) : GetBrickAt(x0, i);
+            //check for enemy tank
+
+            //printf("tile[" + (vertical ? x0 : i) + "][" + (vertical ? i : y0) + "] = " + tile + ", " + BLOCKS[tile]);
+            if(!(tile == BLOCK_GROUND || tile == BLOCK_WATER))
+            {
+                price += BLOCK_OBSTACLNESS[tile];
+            }
+        }
+        
+        return price;
+        
+    };
+    
+    
+    
     
     
    
@@ -1202,6 +1279,7 @@ function GetEnemyList()
 }
 
 
+/* Get map for path finding, exclude tank that get map */
 function GetMap(tank_id)
 {
     // Chuyển map 1 chiều thành map 2 chiều
@@ -1220,7 +1298,7 @@ function GetMap(tank_id)
     for(var k in h)
     {
         var e = h[k];
-        // Bỏ qua trị trí mà nó đang đứng
+        // Bỏ qua vị trí mà nó đang đứng
         if( e.m_id != tank_id)
         {
 	        var t_x = e.getX(), t_y = e.getY();
@@ -2087,7 +2165,7 @@ function OnPlaceTankRequest()
 
 function Update()
 {
-    
+    //var t0 = performance.now();
     //printf(">>> Update(): ");
     
     //printf(GetMap());
@@ -2238,6 +2316,10 @@ function Update()
         UseEMP( L[0].getX(), L[0].getY());
 
     }
+    
+    //var t1 = performance.now();
+    
+    //printf("\nUpdate took ", t1 - t0, " s.");
 
     // Leave this here, don't remove it.
     // This command will send all of your tank command to server

@@ -5,7 +5,7 @@ var Network = require("./../Network");
 printf = function(o)
 {
     // hg
-    if(0)
+    //if(0)
     {
         var d = new Date();
         console.log("**** " + d.getMinutes() + ":" + d.getSeconds() + ", " + d.getMilliseconds());

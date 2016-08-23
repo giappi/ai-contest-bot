@@ -1,4 +1,6 @@
 
+/* global process */
+
 // world is a 2d array of integers (eg world[10][15] = 0)
 // pathStart and pathEnd are arrays like [5,10]
 function findPath(world, pathStart, pathEnd)
@@ -72,7 +74,7 @@ function findPath(world, pathStart, pathEnd)
 	// unless distanceFunction function is not Manhattan
 	function Neighbours(x, y)
 	{
-		var	N = y - 1,
+            var	N = y - 1,
             S = y + 1,
             E = x + 1,
             W = x - 1,
@@ -80,20 +82,20 @@ function findPath(world, pathStart, pathEnd)
             myS = S < worldHeight && canWalkHere(x, S),
             myE = E < worldWidth && canWalkHere(E, y),
             myW = W > -1 && canWalkHere(W, y),
-		result = [];
-		if(myN)
+            result = [];
+        if(myN)
         {
             result.push({x:x, y:N});
         }
-		if(myE)
-		{
+        if(myE)
+        {
             result.push({x:E, y:y});
         }
-		if(myS)
+        if(myS)
         {
             result.push({x:x, y:S});
         }
-		if(myW)
+        if(myW)
         {
             result.push({x:W, y:y});
         }
@@ -724,11 +726,6 @@ function Tank()
         return !vertical ? new Block( i, y0, tile) : new Block( x0, i, tile);
     };
     
-    /* Whose is base ? */
-    this.isMyBaseAt = function(x, y)
-    {
-        return (GetMyTeam() == TEAM_1 && x <= 11) || (GetMyTeam() == TEAM_2 && x >= 12);
-    };
     
     // Chạy đến một trị trí cùng nằm trên một đường thẳng nằm ngang, hoặc thẳng đứng
     this.jumpTo = function(x, y)
@@ -946,7 +943,7 @@ function Tank()
     
     
     
-	this.CheckForCollision = function (newX, newY)
+    this.CheckForCollision = function (newX, newY)
     {
 
 
@@ -984,13 +981,15 @@ function Tank()
         {
 			var x = squareNeedToCheckX[i];
 			var y = squareNeedToCheckY[i];
-			if (g_map[y * MAP_W + x] == BLOCK_WATER
-			||  g_map[y * MAP_W + x] == BLOCK_HARD_OBSTACLE
-			||  g_map[y * MAP_W + x] == BLOCK_SOFT_OBSTACLE
-			||  g_map[y * MAP_W + x] == BLOCK_BASE)
+            var tile = g_map[y * MAP_W + x];
+			if (    tile == BLOCK_WATER
+                ||  tile == BLOCK_HARD_OBSTACLE
+                ||  tile == BLOCK_SOFT_OBSTACLE
+                ||  tile == BLOCK_BASE
+               )
             {
-                printf("... square is invalid... g["+y+"][ "+ x +" ] = " + BLOCKS[g_map[y * MAP_W + x]]);
-                printf("newX = " +  newX + ", newY = " + newY);
+                //printf("... square is invalid... g["+y+"][ "+ x +" ] = " + BLOCKS[g_map[y * MAP_W + x]]);
+                //printf("newX = " +  newX + ", newY = " + newY);
 				return false;
 			}
 		}
@@ -1015,9 +1014,9 @@ function Tank()
                 {
                     //if(g_team == e)
                     {
-                        printf("... tank " + this.m_id + " collision with tank "+ tempTank.m_id + ",  direction = " + DIRECTIONS[tempTank.m_direction] + ",  " + DIRECTIONS[this.m_direction]);
-                        printf("[X, Y] = [" + this.m_x + ", " + this.m_y + "]");
-                        printf("[NewX, NewY] = [" + newX + ", " + newY + "] , [tempTank.m_x, tempTank.m_y] = [" + tempTank.m_x + ", " + tempTank.m_y + "]");
+                        //printf("... tank " + this.m_id + " collision with tank "+ tempTank.m_id + ",  direction = " + DIRECTIONS[tempTank.m_direction] + ",  " + DIRECTIONS[this.m_direction]);
+                        //printf("[X, Y] = [" + this.m_x + ", " + this.m_y + "]");
+                        //printf("[NewX, NewY] = [" + newX + ", " + newY + "] , [tempTank.m_x, tempTank.m_y] = [" + tempTank.m_x + ", " + tempTank.m_y + "]");
                     }
                     return false;
                 }
@@ -1053,6 +1052,7 @@ function Tank()
         
         
         /* SHOOT ENEMY TANK IF SEE IT */
+        /* Look around, if dectect dangerous, shoot */
         var dangerous = false;
         var enemys = GetEnemyList();
         var count_enemy;
@@ -1112,14 +1112,15 @@ function Tank()
         **            SHOOT             **
         **********************************/
        
+       /*
        // Shoot any where , but my base
        var my_base = $base_main[GetMyTeam()];
        if( this.m_x !== my_base[0])
        {
-           //this.shoot();
+           this.shoot();
        }
 
-       /* Look around, if dectect dangerous, shoot */
+       */
        
 
        
@@ -1151,12 +1152,12 @@ function Tank()
         printf("d = " + d);
         var delta = [[-1, 0], [0, -1], [1, 0], [0, 1]][d][vertical];
         
-        printf("From : " + begin + " to " + (delta > 0 ? end : 0));
+        printf("From : " + begin + " to " + end);
 
         var trace = [];
         //printf("vertical = " + vertical + ", For i = " + begin + ", delta =" + L[d][vertical]);
         var visible = true;
-        for(i = begin; delta > 0 ? i <= end : 0 <= i; i += delta)
+        for(i = begin; delta > 0 ? i <= end : end <= i; i += delta)
         {
             trace.push(!vertical ? [i, y0] : [x0, i]);
             tile = !vertical ? GetBrickAt(i, y0) : GetBrickAt(x0, i);
@@ -1169,8 +1170,8 @@ function Tank()
                 break;
             }
         }
-        console.log("Can be see: ");
-        console.log(trace);
+        printf("Can be see: ");
+        printf(trace);
         
         return visible;
         

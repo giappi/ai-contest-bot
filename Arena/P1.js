@@ -2,7 +2,7 @@
 /* global process */
 
 
-
+/* To calculate time execute to test performance */
 var performance =
 {
     "now" : function()
@@ -13,279 +13,9 @@ var performance =
 };
 
 
-// world is a 2d array of integers (eg world[10][15] = 0)
-// pathStart and pathEnd are arrays like [5,10]
-function findPath(world, pathStart, pathEnd)
-{
-    var t0 = performance.now();
-	// the world data are integers:
-	// anything higher than this number is considered blocked
-	// this is handy is you use numbered sprites, more than one
-	// of which is walkable road, grass, mud, etc
-	var maxWalkableTileNum = 0;
-
-	// keep track of the world dimensions
-    // Note that this A-star implementation expects the world array to be square: 
-	// it must have equal height and width. If your game world is rectangular, 
-	// just fill the array with dummy values to pad the empty space.
-	var worldWidth = world[0].length;
-	var worldHeight = world.length;
-	var worldSize =	worldWidth * worldHeight;
-
-	// which heuristic should we use?
-	// default: no diagonals (Manhattan)
-	var distanceFunction = ManhattanDistance;
-	var findNeighbours = function(){}; // empty
-
-	/*
-
-	// alternate heuristics, depending on your game:
-
-	// diagonals allowed but no sqeezing through cracks:
-	var distanceFunction = DiagonalDistance;
-	var findNeighbours = DiagonalNeighbours;
-
-	// diagonals and squeezing through cracks allowed:
-	var distanceFunction = DiagonalDistance;
-	var findNeighbours = DiagonalNeighboursFree;
-
-	// euclidean but no squeezing through cracks:
-	var distanceFunction = EuclideanDistance;
-	var findNeighbours = DiagonalNeighbours;
-
-	// euclidean and squeezing through cracks allowed:
-	var distanceFunction = EuclideanDistance;
-	var findNeighbours = DiagonalNeighboursFree;
-
-	*/
-
-	// distanceFunction functions
-	// these return how far away a point is to another
-
-	function ManhattanDistance(Point, Goal)
-	{	// linear movement - no diagonals - just cardinal directions (NSEW)
-		return Math.abs(Point.x - Goal.x) + Math.abs(Point.y - Goal.y);
-	}
-
-	function DiagonalDistance(Point, Goal)
-	{	// diagonal movement - assumes diag dist is 1, same as cardinals
-		return Math.max( Math.abs(Point.x - Goal.x), Math.abs(Point.y - Goal.y));
-	}
-
-	function EuclideanDistance(Point, Goal)
-	{	// diagonals are considered a little farther than cardinal directions
-		// diagonal movement using Euclide (AC = sqrt(AB^2 + BC^2))
-		// where AB = x2 - x1 and BC = y2 - y1 and AC will be [x3, y3]
-		return Math.sqrt( Math.pow(Point.x - Goal.x, 2) + Math.pow(Point.y - Goal.y, 2));
-	}
-
-	// Neighbours functions, used by findNeighbours function
-	// to locate adjacent available cells that aren't blocked
-
-	// Returns every available North, South, East or West
-	// cell that is empty. No diagonals,
-	// unless distanceFunction function is not Manhattan
-	function Neighbours(x, y)
-	{
-            var	N = y - 1,
-            S = y + 1,
-            E = x + 1,
-            W = x - 1,
-            myN = N > -1 && canWalkHere(x, N),
-            myS = S < worldHeight && canWalkHere(x, S),
-            myE = E < worldWidth && canWalkHere(E, y),
-            myW = W > -1 && canWalkHere(W, y),
-            result = [];
-        if(myN)
-        {
-            result.push({x:x, y:N});
-        }
-        if(myE)
-        {
-            result.push({x:E, y:y});
-        }
-        if(myS)
-        {
-            result.push({x:x, y:S});
-        }
-        if(myW)
-        {
-            result.push({x:W, y:y});
-        }
-		findNeighbours(myN, myS, myE, myW, N, S, E, W, result);
-		return result;
-	}
-
-	// returns every available North East, South East,
-	// South West or North West cell - no squeezing through
-	// "cracks" between two diagonals
-	function DiagonalNeighbours(myN, myS, myE, myW, N, S, E, W, result)
-	{
-		if(myN)
-		{
-			if(myE && canWalkHere(E, N))
-			result.push({x:E, y:N});
-			if(myW && canWalkHere(W, N))
-			result.push({x:W, y:N});
-		}
-		if(myS)
-		{
-			if(myE && canWalkHere(E, S))
-			result.push({x:E, y:S});
-			if(myW && canWalkHere(W, S))
-			result.push({x:W, y:S});
-		}
-	}
-
-	// returns every available North East, South East,
-	// South West or North West cell including the times that
-	// you would be squeezing through a "crack"
-	function DiagonalNeighboursFree(myN, myS, myE, myW, N, S, E, W, result)
-	{
-		myN = N > -1;
-		myS = S < worldHeight;
-		myE = E < worldWidth;
-		myW = W > -1;
-		if(myE)
-		{
-			if(myN && canWalkHere(E, N))
-			result.push({x:E, y:N});
-			if(myS && canWalkHere(E, S))
-			result.push({x:E, y:S});
-		}
-		if(myW)
-		{
-			if(myN && canWalkHere(W, N))
-			result.push({x:W, y:N});
-			if(myS && canWalkHere(W, S))
-			result.push({x:W, y:S});
-		}
-	}
-
-	// returns boolean value (world cell is available and open)
-	function canWalkHere(x, y)
-	{
-		return ((world[y] != null) &&
-			(world[y][x] != null) &&
-			(world[y][x] <= maxWalkableTileNum));
-	};
-
-	// Node function, returns a new object with Node properties
-	// Used in the calculatePath function to store route costs, etc.
-	function Node(Parent, Point)
-	{
-		var newNode = {
-			// pointer to another Node object
-			Parent:Parent,
-			// array index of this Node in the world linear array
-			value:Point.x + (Point.y * worldWidth),
-			// the location coordinates of this Node
-			x:Point.x,
-			y:Point.y,
-			// the heuristic estimated cost
-			// of an entire path using this node
-			f:0,
-			// the distanceFunction cost to get
-			// from the starting point to this node
-			g:0
-		};
-
-		return newNode;
-	}
-
-	// Path function, executes AStar algorithm operations
-	function calculatePath()
-	{
-		// create Nodes from the Start and End x,y coordinates
-		var	mypathStart = Node(null, {x:pathStart[0], y:pathStart[1]});
-		var mypathEnd = Node(null, {x:pathEnd[0], y:pathEnd[1]});
-		// create an array that will contain all world cells
-		var AStar = new Array(worldSize);
-		// list of currently open Nodes
-		var Open = [mypathStart];
-		// list of closed Nodes
-		var Closed = [];
-		// list of the final output array
-		var result = [];
-		// reference to a Node (that is nearby)
-		var myNeighbours;
-		// reference to a Node (that we are considering now)
-		var myNode;
-		// reference to a Node (that starts a path in question)
-		var myPath;
-		// temp integer variables used in the calculations
-		var length, max, min, i, j;
-		// iterate through the open list until none are left
-		while(length = Open.length)
-		{
-			max = worldSize;
-			min = -1;
-			for(i = 0; i < length; i++)
-			{
-				if(Open[i].f < max)
-				{
-					max = Open[i].f;
-					min = i;
-				}
-			}
-			// grab the next node and remove it from Open array
-			myNode = Open.splice(min, 1)[0];
-			// is it the destination node?
-			if(myNode.value === mypathEnd.value)
-			{
-				myPath = Closed[Closed.push(myNode) - 1];
-				do
-				{
-					result.push([myPath.x, myPath.y]);
-				}
-				while (myPath = myPath.Parent);
-				// clear the working arrays
-				AStar = Closed = Open = [];
-				// we want to return start to finish
-				result.reverse();
-			}
-			else // not the destination
-			{
-				// find which nearby nodes are walkable
-				myNeighbours = Neighbours(myNode.x, myNode.y);
-				// test each one that hasn't been tried already
-				for(i = 0, j = myNeighbours.length; i < j; i++)
-				{
-					myPath = Node(myNode, myNeighbours[i]);
-					if (!AStar[myPath.value])
-					{
-						// estimated cost of this particular route so far
-						myPath.g = myNode.g + distanceFunction(myNeighbours[i], myNode);
-						// estimated cost of entire guessed route to the destination
-						myPath.f = myPath.g + distanceFunction(myNeighbours[i], mypathEnd);
-						// remember this new path for testing above
-						Open.push(myPath);
-						// mark this node in the world graph as visited
-						AStar[myPath.value] = true;
-					}
-				}
-				// remember this route as having no more untested options
-				Closed.push(myNode);
-			}
-		} // keep iterating until the Open list is empty
-		return result;
-	}
-
-    var t1 = performance.now();
-    
-    printf("Find path take " + (t1 - t0) + " s.\n");
-	// actually calculate the a-star path!
-	// this returns an array of coordinates
-	// that is empty if no path is possible
-	return calculatePath();
-
-} // end of findPath() function
 
 
-
-
-
-
+_DEBUG = false;
 
 
 // ====================================================================================
@@ -358,6 +88,342 @@ var BASE_SIZE = 2;
 
 // Init My Tank
 $INITED = false;
+
+
+
+
+function PathFinding()
+{
+	// the world data are integers:
+	// anything higher than this number is considered blocked
+	// this is handy is you use numbered sprites, more than one
+	// of which is walkable road, grass, mud, etc
+	var maxWalkableTileNum = 0;
+    this.worldWidth = 0;
+    this.worldHeight = 0;
+
+
+	// which heuristic should we use?
+	// default: no diagonals (Manhattan)
+	this.distanceFunction = ManhattanDistance;
+	var findNeighbours = function(){}; // empty
+
+	/*
+
+	// alternate heuristics, depending on your game:
+
+	// diagonals allowed but no sqeezing through cracks:
+	var distanceFunction = DiagonalDistance;
+	var findNeighbours = DiagonalNeighbours;
+
+	// diagonals and squeezing through cracks allowed:
+	var distanceFunction = DiagonalDistance;
+	var findNeighbours = DiagonalNeighboursFree;
+
+	// euclidean but no squeezing through cracks:
+	var distanceFunction = EuclideanDistance;
+	var findNeighbours = DiagonalNeighbours;
+
+	// euclidean and squeezing through cracks allowed:
+	var distanceFunction = EuclideanDistance;
+	var findNeighbours = DiagonalNeighboursFree;
+
+	*/
+
+	// distanceFunction functions
+	// these return how far away a point is to another
+
+	function ManhattanDistance(Point, Goal)
+	{	// linear movement - no diagonals - just cardinal directions (NSEW)
+		return Math.abs(Point.x - Goal.x) + Math.abs(Point.y - Goal.y);
+	}
+
+	function DiagonalDistance(Point, Goal)
+	{	// diagonal movement - assumes diag dist is 1, same as cardinals
+		return Math.max( Math.abs(Point.x - Goal.x), Math.abs(Point.y - Goal.y));
+	}
+
+	function EuclideanDistance(Point, Goal)
+	{	// diagonals are considered a little farther than cardinal directions
+		// diagonal movement using Euclide (AC = sqrt(AB^2 + BC^2))
+		// where AB = x2 - x1 and BC = y2 - y1 and AC will be [x3, y3]
+		return Math.sqrt( Math.pow(Point.x - Goal.x, 2) + Math.pow(Point.y - Goal.y, 2));
+	}
+
+	// Neighbours functions, used by findNeighbours function
+	// to locate adjacent available cells that aren't blocked
+
+	// Returns every available North, South, East or West
+	// cell that is empty. No diagonals,
+	// unless distanceFunction function is not Manhattan
+	var Neighbours = function(x, y, worldWidth, worldHeight)
+	{
+        var	N = y - 1,
+            S = y + 1,
+            E = x + 1,
+            W = x - 1,
+            myN = N > -1 && canWalkHere(x, N),
+            myS = S < worldHeight && canWalkHere(x, S),
+            myE = E < worldWidth && canWalkHere(E, y),
+            myW = W > -1 && canWalkHere(W, y),
+            result = [];
+    
+        if(myN)
+        {
+            result.push({x:x, y:N});
+        }
+        if(myE)
+        {
+            result.push({x:E, y:y});
+        }
+        if(myS)
+        {
+            result.push({x:x, y:S});
+        }
+        if(myW)
+        {
+            result.push({x:W, y:y});
+        }
+		findNeighbours(myN, myS, myE, myW, N, S, E, W, result);
+		return result;
+	};
+
+
+
+	// returns boolean value (world cell is available and open)
+	var canWalkHere = function(){};
+    
+    
+
+	// Node function, returns a new object with Node properties
+	// Used in the calculatePath function to store route costs, etc.
+	var Node = function(Parent, Point, world_width)
+	{
+
+		return {
+			// pointer to another Node object
+			Parent:Parent,
+			// array index of this Node in the world linear array
+			value:Point.x + Point.y * world_width,
+			// the location coordinates of this Node
+			x:Point.x,
+			y:Point.y,
+			// the heuristic estimated cost
+			// of an entire path using this node
+			f:0,
+			// the distanceFunction cost to get
+			// from the starting point to this node
+			g:0
+		};
+	};
+    
+    
+    
+    var isTargetFunction1 = function(pointerNode, targetNode)
+    {
+        return pointerNode.value == targetNode.value;
+    };
+    
+    var isTargetFunction2 = function(pointerNode, targetNode)
+    {
+        //return pointerNode.value == targetNode.value;
+        var is_target = false;
+        if( pointerNode.x == targetNode.x)
+        {
+            is_target = true;
+            if(pointerNode.y < targetNode.y)
+            {
+                for( var i = pointerNode.y + 1; i < targetNode.y; i++)
+                {
+                    is_target &= canWalkHere(pointerNode.x, i);
+                }
+            }
+            else
+            {
+                for( var i = targetNode.y + 1; i < pointerNode.y; i++)
+                {
+                    is_target &= canWalkHere(pointerNode.x, i);
+                }
+            }
+        }
+        else
+        if( pointerNode.y == targetNode.y)
+        {
+            is_target = true;
+            if(pointerNode.x < targetNode.x)
+            {
+                for( var i = pointerNode.x + 1; i < targetNode.x; i++)
+                {
+                    is_target &= canWalkHere(i, pointerNode.y);
+                }
+            }
+            else
+            {
+                for( var i = targetNode.x + 1; i < pointerNode.x; i++)
+                {
+                    is_target &= canWalkHere(i, pointerNode.y);
+                }
+            }
+        }
+
+        if(is_target)
+        {
+            console.log(targetNode);
+        }
+
+        return is_target;
+    };
+    
+    
+    /**
+     * Function to evaluate
+     * @param {Node} pointerNode
+     * @param {Node} targetNode
+     * @returns {Boolean}
+     */
+    var isTarget = isTargetFunction1;
+    
+
+
+	// Path function, executes AStar algorithm operations
+    // actually calculate the a-star path!
+	// this returns an array of coordinates
+	// that is empty if no path is possible
+    // world is a 2d array of integers (eg world[10][15] = 0)
+    // pathStart and pathEnd are arrays like [5,10]
+	this.findPath = function(world, pathStart, pathEnd, target_function)
+	{
+           
+        var t0 = performance.now();
+        
+
+        // keep track of the world dimensions
+        // Note that this A-star implementation expects the world array to be square: 
+        // it must have equal height and width. If your game world is rectangular, 
+        // just fill the array with dummy values to pad the empty space.
+        var worldWidth = world[0].length;
+        var worldHeight = world.length;
+        var worldSize =	worldWidth * worldHeight;
+        
+        canWalkHere = function(x, y)
+        {
+            return ((world[y] != null) &&
+                (world[y][x] != null) &&
+                (world[y][x] <= maxWalkableTileNum));
+        };
+
+        
+		// create Nodes from the Start and End x,y coordinates
+		var	mypathStart = Node(null, {x:pathStart[0], y:pathStart[1]}, worldWidth);
+		var mypathEnd = Node(null, {x:pathEnd[0], y:pathEnd[1]}, worldWidth);
+		// create an array that will contain all world cells
+		var AStar = new Array(worldSize);
+		// list of currently open Nodes
+		var Open = [mypathStart];
+		// list of closed Nodes
+		var Closed = [];
+		// list of the final output array
+		var result = [];
+		// reference to a Node (that is nearby)
+		var myNeighbours;
+		// reference to a Node (that we are considering now)
+		var myNode;
+		// reference to a Node (that starts a path in question)
+		var myPath;
+		// temp integer variables used in the calculations
+		var length, max, min, i, j;
+		// iterate through the open list until none are left
+		while(length = Open.length)
+		{
+			max = worldSize;
+			min = -1;
+			for(i = 0; i < length; i++)
+			{
+				if(Open[i].f < max)
+				{
+					max = Open[i].f;
+					min = i;
+				}
+			}
+			// grab the next node and remove it from Open array
+			myNode = Open.splice(min, 1)[0];
+			// is it the destination node?
+            target_function = target_function || isTarget;
+            var cond = target_function(myNode, mypathEnd);
+            //cond = myNode.x == mypathEnd.x || myNode.y == mypathEnd.y;
+			if(cond)
+			{
+				myPath = Closed[Closed.push(myNode) - 1];
+				do
+				{
+					result.push([myPath.x, myPath.y]);
+				}
+				while (myPath = myPath.Parent);
+				// clear the working arrays
+				AStar = Closed = Open = [];
+				// we want to return start to finish
+				result.reverse();
+			}
+			else // not the destination
+			{
+				// find which nearby nodes are walkable
+				myNeighbours = Neighbours(myNode.x, myNode.y, worldWidth, worldHeight);
+				// test each one that hasn't been tried already
+				for(i = 0, j = myNeighbours.length; i < j; i++)
+				{
+					myPath = Node(myNode, myNeighbours[i], worldWidth);
+					if (!AStar[myPath.value])
+					{
+						// estimated cost of this particular route so far
+						myPath.g = myNode.g + this.distanceFunction(myNeighbours[i], myNode);
+						// estimated cost of entire guessed route to the destination
+						myPath.f = myPath.g + this.distanceFunction(myNeighbours[i], mypathEnd);
+						// remember this new path for testing above
+						Open.push(myPath);
+						// mark this node in the world graph as visited
+						AStar[myPath.value] = true;
+					}
+				}
+				// remember this route as having no more untested options
+				Closed.push(myNode);
+			}
+		} // keep iterating until the Open list is empty
+        
+        var t1 = performance.now();
+    
+        printf("Find path from [", pathStart[0] , ", ", pathStart[1], "] to [", pathEnd[0], ", ", pathEnd[1], "] take " + (t1 - t0) + " s.\n");
+		return result;
+	};
+    
+    
+    this.find1 = function(world, pathStart, pathEnd)
+    {
+        isTarget = isTargetFunction1;
+        return this.findPath(world, pathStart, pathEnd);
+    };
+    
+    this.find2 = function(world, pathStart, pathEnd)
+    {
+        isTarget = isTargetFunction2;
+        return this.findPath(world, pathStart, pathEnd);
+    };
+    
+    
+    this.find = this.find1;
+    
+    
+    this.setTargetFunction = function(f)
+    {
+        isTarget = f;
+    };
+
+
+} // end of findPath() function
+
+
+
+var pathFinder = new PathFinding();
+
 
 // ====================================================================================
 //                        BEHIND THE SCENE. YOU CAN SAFELY SKIP THIS
@@ -497,7 +563,7 @@ var DecodeFloat32 = function(string, offset)
 function printf(o)
 {
     // hg
-    //if(0)
+    if(_DEBUG)
     {
         //var d = new Date();
         //console.log("**** " + d.getMinutes() + ":" + d.getSeconds() + ", " + d.getMilliseconds());
@@ -505,10 +571,104 @@ function printf(o)
     }
 }
 
-function GetDistance(point1, point2)
+function GetDistance(Point, Goal)
 {
-    return Math.hypot(point2[0] - point1[0], point2[1] - point1[1]);
+    return Math.abs(Point[0] - Goal[0]) + Math.abs(Point[1] - Goal[1]);
 }
+
+
+// Tính toán lại hướng cần di chuyển đến
+var calcLineDirectionTo = function(x0, y0, x1, y1)
+{
+    //calculate direction
+    var dx = x1 - x0;
+    var dy = y1 - y0;
+
+    return dx > 0 && Math.abs(dy/dx) < 1 ? DIRECTION_RIGHT : dx < 0 && Math.abs(dy/dx) < 1 ? DIRECTION_LEFT : dy > 0 && Math.abs(dx/dy) < 1 ? DIRECTION_DOWN : dy < 0 && Math.abs(dx/dy) < 1 ? DIRECTION_UP : -1;
+};
+
+
+/**
+ * 
+ * @param {int} x
+ * @param {int} y
+ * @param {int} t_x
+ * @param {int} t_y
+ * @returns {Boolean}
+ */
+var CanISee = function(x, y, t_x, t_y)
+{
+    // point of view and target is not in a line
+    if( ! ( t_x == x || t_y == y))
+    {
+        return false;
+    }
+    
+    if(x == t_x && y == t_y)
+    {
+        return false;
+    }
+
+    var d = calcLineDirectionTo(x, y, t_x, t_y)%4; // [left, top, right, bottom][d]
+    //printf("d = " + d);
+    var vertical = d%2;
+
+    var tile, i, x0 = x + 0.5 >> 0, y0 = y + 0.5 >> 0;
+    var begin = vertical ? y0 : x0;
+    var end   = vertical ? t_y + 0.5 >> 0 : t_x + 0.5 >> 0;
+    var delta = [[-1, 0], [0, -1], [1, 0], [0, 1]][d][vertical];
+
+    //printf("From : " + begin + " to " + end);
+
+    //var trace = [];
+    printf("vertical = " + vertical + ", For i = " + begin + ", delta =" + delta);
+    var visible = true;
+    for(i = begin; delta > 0 ? i <= end : end <= i; i += delta)
+    {
+        //trace.push(!vertical ? [i, y0] : [x0, i]);
+        tile = !vertical ? GetBrickAt(i, y0) : GetBrickAt(x0, i);
+        //check for enemy tank
+
+        //printf("tile[" + (vertical ? x0 : i) + "][" + (vertical ? i : y0) + "] = " + tile + ", " + BLOCKS[tile]);
+        if(!(tile == BLOCK_GROUND || tile == BLOCK_WATER))
+        {
+            visible = false;
+            break;
+        }
+    }
+    //printf("Can be see: ");
+    //printf(trace);
+
+    return visible;
+
+};
+
+
+// degree of dangerous
+function countEnemyAt(x, y)
+{
+    var count = 0;
+    var enemies = GetEnemyList();
+    for(var i in enemies)
+    {
+        var tank = enemies[i];
+        if( Math.abs( x - tank.getX()) < 0.5 || Math.abs( y - tank.getY()) < 0.5)
+        {
+            if( tank.m_HP > 0)
+            {
+                //printf("CanISee x: ", x, ", y: ", y , ", t_x: " , tank.getX(), ", t_y: " , tank.getY());
+                if( CanISee(x, y, tank.getX(), tank.getY()))
+                {
+                    count++;
+                }
+            }
+        }
+    }
+    //console.log("Count enemy = ", count);
+    return count;
+}
+
+
 
 function Obstacle()
 {
@@ -579,6 +739,8 @@ function Tank()
     var shooting = false;
     var moving = false;
     
+    var that = this;
+    
     //Getter
     this.getX = function(){ return this.m_x; };
     this.getY = function(){ return this.m_y; };
@@ -586,6 +748,13 @@ function Tank()
     this.getHP = function(){ return m_HP; };
     this.getDirection = function(){ return this.m_direction; };
     this.setDirection = function(dir){ this.m_direction = dir; };
+    
+    // Target function to find path
+    var targetFx = function(pointer, target)
+    {
+        //return pointer.x == target.x && pointer.y == target.y;
+        return CanISee(pointer.x, pointer.y, target.x, target.y);
+    };
     
     /* Send request to server */
     this.sendCommand = function()
@@ -764,17 +933,17 @@ function Tank()
         if( (x - this.m_x)*(y - this.m_y) != 0)
         {
             //printf("\n");
-            //printf("View here: ");
-            //printf("path: ");
-            //printf(this.path);
+            printf("View here: ");
+            printf("path: ");
+            printf(this.path);
             var p = this.path.pop();
-            //printf("Tank " + this.m_id + " is at [" + this.m_x + ", " + this.m_y + "]  to [" + x + ", " + y + "] ");
-            //printf(">> Split path: Tank" + this.m_id + " , p = [" + p.toString() + "]");
+            printf("Tank " + this.m_id + " is at [" + this.m_x + ", " + this.m_y + "]  to [" + x + ", " + y + "] ");
+            printf(">> Split path: Tank" + this.m_id + " , p = [" + p.toString() + "]");
             if( this.CheckForCollision(this.m_x, p[1]))
             {
                 this.path.push([p[0], p[1]]);
                 this.path.push([this.m_x, p[1]]);
-                //printf("Path X selected.");
+                printf("Path X selected.");
                 printf(this.path);
             }
             else
@@ -782,16 +951,16 @@ function Tank()
             {
                 this.path.push([p[0], p[1]]);
                 this.path.push([p[0], this.m_y]);
-                //printf("Path Y selected.");
+                printf("Path Y selected.");
                 printf(this.path);
 
             }
             else
             {
                 this.path.push(p);
-                //printf("No path can be selected.");
+                printf("No path can be selected.");
             }
-            //printf("End view.\n");
+            printf("End view.\n");
             return;
         }
         
@@ -809,10 +978,12 @@ function Tank()
             //if( this.m_id == 3)
             //printf("inside Tank " + this.m_id + " is at [" + this.m_x + ", " + this.m_y + "], and will jump to [" + x + ", " + y + "] ");
             this.setDirection(dir);
+            /*
 	        if(this.m_x >= 19 && this.m_id == 0)
 	        {
 	        	printf(">> Tank " + this.m_id + " calculate dir = " + DIRECTIONS[this.getDirection()]);
 	    	}
+            */
             this.goForward();
         }
         else
@@ -822,7 +993,7 @@ function Tank()
         }
         
         //var tile = this.getTileForward();
-        if( this.m_id == 0)
+        //if( this.m_id == 0)
         {
             printf(">>> Tank " + this.m_id + " is at [" + this.m_x + ", " + this.m_y + "], and will jump to [" + x + ", " + y + "] ");
         }
@@ -890,7 +1061,7 @@ function Tank()
         //printf(">>> findPath(, x, y)");
         //printf(findPath(GetMap(), [this.m_x | 0, this.m_y | 0], [x, y]).reverse());
         
-        var path = findPath(GetMap(this.m_id), [this.m_x >> 0, this.m_y >> 0], [x, y]);
+        var path = pathFinder.find1(GetMap(this.m_id), [this.m_x >> 0, this.m_y >> 0], [x, y]);
 
         this.path = path.reverse();
 
@@ -1057,35 +1228,81 @@ function Tank()
             return this.calcLineDirectionTo(this.path[this.path.length-1][0], this.path[this.path.length-1][1]);
         }
         return this.m_direction;
-    }
+    };
+    
+    
+    this.findAnEnemyToShoot = function()
+    {
+            // get enemy that they are alive
+            var enemys = GetEnemyList().filter(e => e.m_HP > 0);
+
+            //sort by distance to me
+            enemys = enemys.sort( function(t1, t2)
+            {
+                var d1 = GetDistance([that.m_x, that.m_y], [t1.m_x, t1.m_y]);
+                var d2 = GetDistance([that.m_x, that.m_y], [t2.m_x, t2.m_y]);
+                //printf("Compare distance " + d1 + " .... " + d2);
+                return  d1 - d2;
+            });
+
+            //printf("Enemy: ");
+            //printf(enemys.map((e) => "Tank " + e.m_id + ": " + GetDistance([this.m_x, this.m_y], [e.m_x, e.m_y])));
+            // smallest distance;
+            var tank = enemys[0];
+            if( tank.m_HP > 0)
+            {
+                var path = pathFinder.findPath(GetMap(this.m_id), [this.m_x >> 0, this.m_y >> 0], [tank.m_x, tank.m_y], targetFx);
+                this.path = path.reverse();
+                printf("Path for find enemy of tank ", this.m_id);
+                printf(this.path);
+            }
+    };
     
     this.update = function()
     {
         //printf("\n\nTank "+this.m_id+" -> update();");
         
         // go to enemy base
-        if( this.path.length == 0 && this.target.length && !( this.m_x == this.target[0] && this.m_y == this.target[1]) )
+        if( this.path.length == 0 && this.target.length &&  !( this.m_x == this.target[0] && this.m_y == this.target[1]) )
         {
         	//printf("path is empty. try go to target to get path.");
-            this.goTo( this.target[0], this.target[1]);
+            //this.goTo( this.target[0], this.target[1]);
             //printf("path is: ");
             //printf(this.path);
+            
+            if( this.m_type == TANK_LIGHT)
+            {
+                if( this.m_coolDown == 0)
+                {
+                     this.findAnEnemyToShoot();
+                }
+                else
+                {
+                    //this.goTo( this.target[0], this.target[1]);
+                }
+            }
+            else
+            {
+                //this.goTo( this.target[0], this.target[1]);
+            }
+            
+            
         }
 
         
         if(this.m_id == 2)
         {
             //printf(">>>> Tank 2: path.length: " + this.path.length + ", x = " + this.m_x + ", y = " + this.m_y + ", tx=" + this.target[0] + ", ty="+ this.target[1]);
-            //rintf(this.path);
+            //printf(this.path);
         }
         
         
         
         /* SHOOT ENEMY TANK IF SEE IT */
         /* Look around, if dectect dangerous, shoot */
-        var dangerous = false;
+        var move = true;
         var enemys = GetEnemyList();
-        var count_enemy = 0;
+
         for(var i in enemys)
         {
             var tank = enemys[i];
@@ -1095,20 +1312,38 @@ function Tank()
                 {
                     if(this.canBeSee(tank.getX(), tank.getY()))
                     {
-                        count_enemy++;
-                        // shoot at first tank that I see
-                        this.setDirection( this.calcLineDirectionTo(tank.getX(), tank.getY()));
-                        printf(this.m_id + " saw tank " + tank.m_id + " .Set direction to " + DIRECTIONS[this.getDirection()]);
-                        printf("From [" + this.m_x + ", " + this.m_y + "] to [" + tank.m_x + ", " + tank.m_y + "].");
-                        this.shoot(true);
-                        // keep moving if their direction in a line
-                        if(this.getPathDirection()%4%2 == tank.getDirection()%4%2)
+                        
+                        if( this.m_type == TANK_LIGHT)
                         {
-                            dangerous = false;
-                        }
-                        else
-                        {
-                            dangerous = true;
+                            if( this.m_coolDown == 0)
+                            {
+                                // shoot at first tank that I see
+                                this.setDirection( this.calcLineDirectionTo(tank.getX(), tank.getY()));
+                                //printf(this.m_id + " saw tank " + tank.m_id + " .Set direction to " + DIRECTIONS[this.getDirection()]);
+                                //printf("From [" + this.m_x + ", " + this.m_y + "] to [" + tank.m_x + ", " + tank.m_y + "].");
+                                this.shoot(true);
+                                // keep moving if their direction in a line
+                                if(this.getPathDirection()%4%2 == tank.getDirection()%4%2)
+                                {
+                                    move = true;
+                                }
+                                else
+                                {
+                                    move = false;
+                                }
+                            }
+                            else
+                            {
+                                // chạy trốn
+                                var place = [ [this.m_x - 1, this.m_y], [this.m_x + 1, this.m_y], [this.m_x, this.m_y + 1], [this.m_x, this.m_y - 1]];
+                                place.filter(e => this.CheckForCollision(e[0], e[1]));
+                                place = place.sort( (p1, p2) => countEnemyAt(p1[0], p1[1]) - countEnemyAt(p2[0], p2[1]) );
+                                //console.log("Place: ");
+                                //console.log(place);
+                                // smallest dangerous
+                                this.path = [[place[0][0], place[0][1]]];
+                            }
+
                         }
                         break;
                     }
@@ -1123,7 +1358,7 @@ function Tank()
         **            MOVE              **
         **********************************/
         //console.log("target[0] = " + target[0] + ", target[1] = " + target[1] + ", t.getX() = " + t.getX() + ", t.getY() = " + t.getY());
-        if( dangerous == false)
+        if( move == true)
         {
             while(this.path.length > 0)
             {
@@ -1167,11 +1402,11 @@ function Tank()
        if( this.m_x === your_base[0])
        {
        	  // bug: override direction cause wrong to move to target
-           this.setDirection( this.calcLineDirectionTo(your_base[0], your_base[1]));
-           this.shoot();
+           //this.setDirection( this.calcLineDirectionTo(your_base[0], your_base[1]));
+           //this.shoot();
        }
 
-       printf("Tank "+this.m_id+" -> update() finished.\n\n");
+       //printf("Tank "+this.m_id+" -> update() finished.\n\n");
        
     };
     
@@ -1179,40 +1414,7 @@ function Tank()
     
     this.canBeSee = function(t_x, t_y)
     {
-
-        var d = this.calcLineDirectionTo(t_x, t_y)%4; // [left, top, right, bottom][d]
-        //printf("d = " + d);
-        var vertical = d%2;
-        
-        var tile, i, x0 = this.m_x + 0.5 >> 0, y0 = this.m_y + 0.5 >> 0;
-        var begin = vertical ? y0 : x0;
-        var end   = vertical ? t_y + 0.5 >> 0 : t_x + 0.5 >> 0;
-        printf("d = " + d);
-        var delta = [[-1, 0], [0, -1], [1, 0], [0, 1]][d][vertical];
-        
-        printf("From : " + begin + " to " + end);
-
-        //var trace = [];
-        //printf("vertical = " + vertical + ", For i = " + begin + ", delta =" + L[d][vertical]);
-        var visible = true;
-        for(i = begin; delta > 0 ? i <= end : end <= i; i += delta)
-        {
-            //trace.push(!vertical ? [i, y0] : [x0, i]);
-            tile = !vertical ? GetBrickAt(i, y0) : GetBrickAt(x0, i);
-            //check for enemy tank
-
-            //printf("tile[" + (vertical ? x0 : i) + "][" + (vertical ? i : y0) + "] = " + tile + ", " + BLOCKS[tile]);
-            if(!(tile == BLOCK_GROUND || tile == BLOCK_WATER))
-            {
-                visible = false;
-                break;
-            }
-        }
-        printf("Can be see: ");
-        //printf(trace);
-        
-        return visible;
-        
+        return CanISee(this.m_x, this.m_y, t_x, t_y);  
     };
     
     
@@ -1294,12 +1496,28 @@ function GetMap(tank_id)
     }
     
     //Đặt những vị trí tank đang chiếm giữ
-    var h = GetEnemyList().concat( GetMyTeamList());
+    var h = GetEnemyList();
     for(var k in h)
     {
         var e = h[k];
-        // Bỏ qua vị trí mà nó đang đứng
-        if( e.m_id != tank_id)
+        // những con đã chết sẽ là vật cản
+        if(e.m_HP == 0)
+        {
+	        var t_x = e.getX(), t_y = e.getY();
+	        l[Math.floor(t_y)][Math.floor(t_x)] = BLOCK_TANK;
+	        l[Math.ceil(t_y)][Math.ceil(t_x)] = BLOCK_TANK;
+	        l[Math.floor(t_y)][Math.ceil(t_x)] = BLOCK_TANK;
+	        l[Math.ceil(t_y)][Math.floor(t_x)] = BLOCK_TANK;
+    	}
+    }
+    
+    h = GetMyTeamList();
+    for(var k in h)
+    {
+        var e = h[k];
+        // Bỏ qua vị trí mà nó đang đứng &&  bỏ qua những con đã chết
+        if( e.m_id != tank_id /*&& e.m_HP == 0*/)
+        //if(e.m_HP == 0)
         {
 	        var t_x = e.getX(), t_y = e.getY();
 	        l[Math.floor(t_y)][Math.floor(t_x)] = BLOCK_TANK;
@@ -2116,7 +2334,7 @@ function OnPlaceTankRequest()
     printf("The team " + g_team);
     
     //Lite to heavy
-    var W = [TANK_HEAVY, TANK_HEAVY, TANK_HEAVY, TANK_HEAVY];
+    var W = [TANK_LIGHT, TANK_LIGHT, TANK_LIGHT, TANK_LIGHT];
     
     $place = {};
     //$place[TEAM_1] = [[7, 1], [6, 1], [5, 1], [4, 1]];
@@ -2133,10 +2351,10 @@ function OnPlaceTankRequest()
     
     $path = {};
     $path[TEAM_1] = [];
-    $path[TEAM_1][0] = [[20,  1]];
-    $path[TEAM_1][1] = [[20,  1]];
-    $path[TEAM_1][2] = [[20, 20]];
-    $path[TEAM_1][3] = [[19, 20], [18, 20], [20, 20]];
+    $path[TEAM_1][0] = [];//[[20,  1]];
+    $path[TEAM_1][1] = [];//[[20,  1]];
+    $path[TEAM_1][2] = [];//[[20, 20]];
+    $path[TEAM_1][3] = [];//[[19, 20], [18, 20], [20, 20]];
     
     $path[TEAM_2] = [];
     for(var i = 0; i <  $path[TEAM_1].length; i++)

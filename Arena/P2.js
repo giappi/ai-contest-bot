@@ -970,15 +970,15 @@ function OnPlaceTankRequest()
     // to your strategy here.
     if (GetMyTeam() == TEAM_1)
     {
-        PlaceTank(TANK_LIGHT, 6, 1);
-        PlaceTank(TANK_MEDIUM, 1, 7);
+        PlaceTank(TANK_HEAVY, 6, 1);
+        PlaceTank(TANK_HEAVY, 1, 7);
         PlaceTank(TANK_HEAVY, 1, 16);
-        PlaceTank(TANK_LIGHT, 1, 17);
+        PlaceTank(TANK_HEAVY, 1, 17);
     }
     else if (GetMyTeam() == TEAM_2)
     {
-        PlaceTank(TANK_LIGHT, 20, 6);
-        PlaceTank(TANK_MEDIUM, 20, 7);
+        PlaceTank(TANK_HEAVY, 20, 6);
+        PlaceTank(TANK_HEAVY, 20, 7);
         //PlaceTank(TANK_HEAVY, 20, 5);
         PlaceTank(TANK_HEAVY, 20, 16);
         PlaceTank(TANK_HEAVY, 20, 17);

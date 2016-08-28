@@ -1,7 +1,7 @@
 
 /* global process */
 
-_DEBUG = false;
+_DEBUG = true;
 
 /* To calculate time execute to test performance */
 var performance =
@@ -1128,6 +1128,7 @@ function Tank()
         // Try to goto target
         this.goTo(x, y);
         
+        /*
         var k = -1;
         while( this.path.length == 0 && ++k < $point_gold[GetMyTeam()].length)
         {
@@ -1144,6 +1145,7 @@ function Tank()
             	echo("Target found. It is [" + this.target.toString() + "]");
             }
         }
+        */
 
         if(this.path.length == 0)
         {
@@ -1296,6 +1298,7 @@ function Tank()
                 this.target = [tank.m_x, tank.m_y];
                 var path = pathFinder.findPath(GetMap(this.m_id), [this.m_x >> 0, this.m_y >> 0], [tank.m_x, tank.m_y], targetFx);
                 this.path = path.reverse();
+                //this.path.pop();
                 printf("Path for find enemy of tank ", this.m_id);
                 var_dump(this.path);
             }
@@ -1341,6 +1344,7 @@ function Tank()
             //echo("path is: ");
             //echo(this.path);
             
+            /* Làm thế nào để tìm kẻ địch khi mà nó cứ liên tục di chuyển không ở một chỗ*/
                 this.findAnEnemyToShoot();
             }
 
@@ -1430,6 +1434,10 @@ function Tank()
                 // Get next position is current is my position
                 if(next[0] == this.getX() && next[1] == this.getY())
                 {
+                    /* Tạm thời: Cập nhật path sau mỗi bước di chuyển, vì kẻ địch cũng di chuyển*/
+                    //this.updatePath();
+                    /**/
+                    
                     this.path.pop();
                     //get next target
                     next = this.path[this.path.length-1];

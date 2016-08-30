@@ -92,7 +92,7 @@ var DIRECTION_RIGHT = 2;
 var DIRECTION_DOWN = 3;
 var DIRECTION_LEFT = 4;
 
-var DIRECTIONS_TEXT = ["0", "DIRECTION_UP", "DIRECTION_RIGHT", "DIRECTION_DOWN", "DIRECTION_LEFT"];
+var DIRECTIONS = ["0", "DIRECTION_UP", "DIRECTION_RIGHT", "DIRECTION_DOWN", "DIRECTION_LEFT"];
 
 var NUMBER_OF_TANK = 4;
 
@@ -640,8 +640,7 @@ var CanISee = function(x, y, t_x, t_y, visible_function)
     // point of view and target is not in a line
     if( ! ( t_x == x || t_y == y))
     {
-        //printf("Can I See: [%f, %f] -> [%f, %f]", x, y, t_x, t_y);
-        //return false;
+        return false;
     }
     
     if(x == t_x && y == t_y)
@@ -670,8 +669,8 @@ var CanISee = function(x, y, t_x, t_y, visible_function)
         //check for enemy tank
 
         //echo("tile[" + (vertical ? x0 : i) + "][" + (vertical ? i : y0) + "] = " + tile + ", " + BLOCKS[tile]);
-        visible_function = visible_function || function(t){ return (t == BLOCK_GROUND || t == BLOCK_WATER); };
-        if(visible_function(tile) == false)
+        visible_function = visible_function || function(t){ return !(t == BLOCK_GROUND || t == BLOCK_WATER); };
+        if(visible_function(tile))
         {
             visible = false;
             break;
@@ -709,16 +708,10 @@ function countEnemyAt(x, y)
     return count;
 }
 
-/**
- * 
- * @param {Number} x
- * @param {Number} y
- * @returns {Array of Bullet}
- */
+
 function detectEnemyBullet(x, y)
 {
-
-        var bullets = [];
+        var c = 0;
         for(var bullet of g_bullets[GetOpponentTeam()])
         {
             var dir1 = calcLineDirectionTo(x, y, bullet.m_x, bullet.m_y);
@@ -731,11 +724,10 @@ function detectEnemyBullet(x, y)
                     && CanISee(x, y, bullet.m_x, bullet.m_y)
                )
             {
-                bullets.push(bullet);
+                c++;
             }
         }
-
-        return bullets;
+        return c;
 }
 
 
@@ -822,7 +814,6 @@ function Tank()
     
 
     this.path = [];
-    this.state = [];
     this.busy = 0;
     this.inited = false;
     this.target = [];
@@ -836,6 +827,8 @@ function Tank()
     var that = this;
     
     //Getter
+    this.getTeam = function(){ return m_team; };
+    this.getHP = function(){ return m_HP; };
     this.getDirection = function(){ return this.m_direction; };
     this.setDirection = function(dir){ this.m_direction = dir; };
     
@@ -843,12 +836,7 @@ function Tank()
     var targetFx = function(pointer, target)
     {
         //return pointer.x == target.x && pointer.y == target.y;
-        // can not see if pointer and target is not in a line
-        if( !(pointer.x == target.x || pointer.y == target.y))
-        {
-            return false;
-        }
-        return CanISee(pointer.x, pointer.y, target.x, target.y) && detectEnemyBullet(pointer.x, pointer.y).length  < 1;
+        return CanISee(pointer.x, pointer.y, target.x, target.y) && !detectEnemyBullet(pointer.x, pointer.y);
     };
     
     /* Send request to server */
@@ -921,10 +909,70 @@ function Tank()
         return -1;
     };
     
+    /* Look DIRECTION_UP to see something */
+    this.lookLeft = function()
+    {
+        var tile;
+        for(var i = this.m_x; i >= 0; i--)
+        {
+            tile = GetTileAt(i, this.m_y, this.m_id);
+            if(tile !== BLOCK_GROUND)
+            {
+                break;
+            }
+        }
+        return tile;
+    };
+    
+    /* Look at Map top to see something */
+    this.lookTop = function()
+    {
+        var tile;
+        for(var j = this.m_y; j >= 0; j--)
+        {
+            tile = GetTileAt(this.m_x, j, this.m_id);
+            if(tile != BLOCK_GROUND)
+            {
+                break;
+            }
+        }
+        return tile;
+    };
+    
+    /* Look at right to see something */
+    this.lookRight = function()
+    {
+        var tile;
+        for(var i = this.m_x; i < MAP_W; i++)
+        {
+            tile = GetTileAt(i, this.m_y, this.m_id);
+            if(tile != BLOCK_GROUND)
+            {
+                break;
+            }
+        }
+        return tile;
+    }
+    
+    /* Look at Map Bottom to see something */
+    this.lookBottom = function()
+    {
+        var tile;
+        for(var j = this.m_y; j < MAP_H; j++)
+        {
+            tile = GetTileAt(this.m_x, j, this.m_id);
+            if(tile != BLOCK_GROUND)
+            {
+                break;
+            }
+        }
+        return tile;
+    }
+    
     /* Look at something forward */
     this.lookForward = function()
     {
-        //echo("Direction: " + direction + ", " + DIRECTIONS_TEXT[direction]);
+        //echo("Direction: " + direction + ", " + DIRECTIONS[direction]);
         var d = this.m_direction % 4; // [left, top, right, bottom][d]
         //echo("d = " + d);
         var vertical = d%2;
@@ -1016,7 +1064,7 @@ function Tank()
             /*
 	        if(this.m_x >= 19 && this.m_id == 0)
 	        {
-	        	echo(">> Tank " + this.m_id + " calculate dir = " + DIRECTIONS_TEXT[this.getDirection()]);
+	        	echo(">> Tank " + this.m_id + " calculate dir = " + DIRECTIONS[this.getDirection()]);
 	    	}
             */
             this.goForward();
@@ -1028,11 +1076,11 @@ function Tank()
         }
         
         //var tile = this.getTileForward();
-        if( this.m_id == 2)
+        //if( this.m_id == 0)
         {
             printf("Tank %d: [%f, %f] -> [%f, %f] ", this.m_id, this.m_x, this.m_y, x, y);
         }
-        //echo(`Tank${this.m_id}.getTileForward = ` + BLOCKS[this.getTileForward()] + ", dir=" + DIRECTIONS_TEXT[this.m_direction]);
+        //echo(`Tank${this.m_id}.getTileForward = ` + BLOCKS[this.getTileForward()] + ", dir=" + DIRECTIONS[this.m_direction]);
         
         
         
@@ -1093,12 +1141,8 @@ function Tank()
         // Tìm đường đi đến mục tiêu
         var path = pathFinder.find1(GetMap(this.m_id), [this.m_x >> 0, this.m_y >> 0], [x, y]);
         this.path = path.reverse();
-        /* Temp fix, important! Because path finding work with integer, but tank is float */
-        if(this.path.length > 1)
-        {
-            // revove current position
-            this.path.pop();
-        }
+        // remove start position
+        this.path.pop();
         
         //echo(`>>> Tank ${this.m_id} Find path from  = [${this.m_x | 0}, ${this.m_y | 0}] to [${x}, ${y}]`);
         //echo(this.path);
@@ -1224,7 +1268,7 @@ function Tank()
                 {
                     //if(g_team == e)
                     {
-                        //echo("... tank " + this.m_id + " collision with tank "+ tempTank.m_id + ",  direction = " + DIRECTIONS_TEXT[tempTank.m_direction] + ",  " + DIRECTIONS_TEXT[this.m_direction]);
+                        //echo("... tank " + this.m_id + " collision with tank "+ tempTank.m_id + ",  direction = " + DIRECTIONS[tempTank.m_direction] + ",  " + DIRECTIONS[this.m_direction]);
                         //echo("[X, Y] = [" + this.m_x + ", " + this.m_y + "]");
                         //echo("[NewX, NewY] = [" + newX + ", " + newY + "] , [tempTank.m_x, tempTank.m_y] = [" + tempTank.m_x + ", " + tempTank.m_y + "]");
                     }
@@ -1244,11 +1288,6 @@ function Tank()
             return this.calcLineDirectionTo(this.path[this.path.length-1][0], this.path[this.path.length-1][1]);
         }
         return this.m_direction;
-    };
-    
-    this.decideTankToShoot = function(tankList)
-    {
-        
     };
     
     
@@ -1283,12 +1322,7 @@ function Tank()
                     this.target = [tank.m_x, tank.m_y];
                     var path = pathFinder.findPath(GetMap(this.m_id), [this.m_x >> 0, this.m_y >> 0], [tank.m_x, tank.m_y], targetFx);
                     this.path = path.reverse();
-                    /* Temp fix, important! Because path finding work with integer, but tank is float */
-                    if(this.path.length > 1)
-                    {
-                        // revove current position
-                        this.path.pop();
-                    }
+                    this.path.pop();
                     printf(" Tank %d find path for find enemy of tank ", this.m_id);
                     var_dump(this.path);
                     // Tồn tại đường đi từ tank tới tank
@@ -1298,62 +1332,42 @@ function Tank()
                     }
                 }
             }
-            
-            //find base
-            if( this.path.length == 0)
+            //find enemy base
+            if(this.path.length == 0)
             {
                 var path = pathFinder.findPath(GetMap(this.m_id), [this.m_x >> 0, this.m_y >> 0], [ g_bases[GetOpponentTeam()][2].m_x, g_bases[GetOpponentTeam()][2].m_y], function(tile)
                 {
                     return !( tile == BLOCK_GROUND  || tile == BLOCK_WATER || tile == BLOCK_SOFT_OBSTACLE );
                 });
                 this.path = path.reverse();
-                /* Temp fix, important! Because path finding work with integer, but tank is float */
-                if(this.path.length > 1)
-                {
-                    // revove current position
-                    this.path.pop();
-                }
-
+                this.path.pop();
+                
                 printf(" Tank %d find path for base. ", this.m_id);
                 var_dump(this.path);
-                return;
+                return false;
             }
             
     };
     
     this.goToSafeZone = function()
     {
-
         // Don't need run away if no danger
         if(this.detectBullet() < 1)
         {
+            printf("Tank %d detect bullet.", this.m_id);
             return;
         }
-        else
-        {
-            printf("Tank %d detect bullet.", this.m_id);
-        }
         printf("Tank %d go to safezone.", this.m_id);
-        
-
         
         var path = pathFinder.findPath(GetMap(this.m_id), [this.m_x >> 0, this.m_y >> 0], [this.target[0] >> 0, this.target[1] >> 0], function(pointer, target)
         {
             //printf("Number of bullet at mine [%d, %d] is %d", that.m_x, that.m_y, that.detectBullet());
             //printf("Number of bullet at [%d, %d] is %d." , pointer.x, pointer.y, detectEnemyBullet(pointer.x, pointer.y));
-            printf("goToSafeZone.callback: detectEnemyBullet = %d", detectEnemyBullet(pointer.x, pointer.y).length);
-            printf("goToSafeZone.callback: that.CheckForCollision = %d", that.CheckForCollision(pointer.x, pointer.y));
-            return detectEnemyBullet(pointer.x, pointer.y).length < 1 && that.CheckForCollision(pointer.x, pointer.y);
+            return detectEnemyBullet(pointer.x, pointer.y) < 1 && that.CheckForCollision(pointer.x, pointer.y);
         });
         
         this.path = path.reverse();
-        /* Temp fix, important! Because path finding work with integer, but tank is float */
-        if(this.path.length > 1)
-        {
-            // revove current position
-            this.path.pop();
-        }
-        printf("Path found for goToSafeZone: ");
+        this.path.pop();
         var_dump(this.path);
        
     };
@@ -1363,77 +1377,13 @@ function Tank()
         return detectEnemyBullet(this.m_x, this.m_y);
     };
     
-    /**
-     * Get tank position in next update
-     * @returns {Array}
-     */
-    this.getPositionInNextFrame = function()
-    {
-
-        var newX = this.m_x;
-        var newY = this.m_y;
-
-        if (this.m_direction == DIRECTION_UP)
-        {
-            newY = this.m_y - this.m_speed;
-        }
-        else if (this.m_direction == DIRECTION_DOWN)
-        {
-            newY = this.m_y + this.m_speed;
-        }
-        else if (this.m_direction == DIRECTION_LEFT)
-        {
-            newX = this.m_x - this.m_speed;
-        }
-        else if (this.m_direction == DIRECTION_RIGHT)
-        {
-            newX = this.m_x + this.m_speed;
-        }
-
-        return [fixNumber(newX), fixNumber(newY)];
-    }
-    
-    this.detectBulletNextFrame = function()
-    {
-        var new_pos = this.getPositionInNextFrame();
-        return detectEnemyBullet(new_pos[0], new_pos[1]);
-    };
-    
-    /**
-     * Tank use it to move
-     * @returns {undefined}
-     */
-    this.updatePosition = function()
-    {
-        //console.log("target[0] = " + target[0] + ", target[1] = " + target[1] + ", t.m_x = " + t.m_x + ", t.m_y = " + t.m_y);
-
-        while(this.path.length > 0)
-        {
-            // get next position
-            var next = this.path[this.path.length-1];
-            // Get next position is current is my position
-            if(next[0] == this.m_x && next[1] == this.m_y)
-            {
-                /* Tạm thời: Cập nhật path sau mỗi bước di chuyển, vì kẻ địch cũng di chuyển*/
-                //this.updatePath();
-                /**/
-
-                this.path.pop();
-                //get next target
-                next = this.path[this.path.length-1];
-            }
-            else
-            {
-                this.jumpTo(next[0], next[1]);
-                break;
-            }
-        }
-    };
-    
-    
     this.update = function()
     {
         
+        if(this.detectBullet())
+        {
+            printf("Bullet detected.");
+        }
         //printf("\n\nTank %d -> update();", this.m_id);
         
         /*
@@ -1444,81 +1394,92 @@ function Tank()
         }
         */
        
-       /* ******************************************** 
-        * ************* 1. EVALUATE ******************
-        * ******************************************** 
-        * */
-        
-        /* Current */
-        var shootEnemy = -1;
-        var detectedBulletList = this.detectBullet();
-        var detectedTankList = [];
-        
-        /* In future */
-        var newPosition = this.getPositionInNextFrame();
-        var newDetectedBulletList = this.detectBulletNextFrame();
-
-        
-        // Đánh giá kẻ địch xung quanh
-        var enemys = GetEnemyList();
-        for(var i in enemys)
+        if( this.path.length == 0)
         {
-            var tank = enemys[i];
-            if( tank.m_HP == 0)
+            //if( this.target.length == 0)
             {
-                continue;
-            }
+        	//echo("path is empty. try go to target to get path.");
+            //this.goTo( this.target[0], this.target[1]);
+            //echo("path is: ");
+            //echo(this.path);
             
-            // check if I can hit another
-            if( Math.abs( this.m_x - tank.m_x) < 0.5 || Math.abs( this.m_y - tank.m_y) < 0.5)
-            {
-                //printf(">>> Tank %s at [%f, %f] in a line with tank Tank %s at [%f, %f].", this.m_id, this.m_x, this.m_y, tank.m_id, tank.m_x, tank.m_y);
-                if(this.canBeSee(tank.m_x, tank.m_y))
-                {
-                    printf(">>> Tank %s saw tank Tank %s .", this.m_id, tank.m_id);
-                    detectedTankList.push(tank);
-                }
+            /* Làm thế nào để tìm kẻ địch khi mà nó cứ liên tục di chuyển không ở một chỗ*/
+                this.findAnEnemyToShoot();
             }
-        }
-        
 
-
-       /* ******************************************** 
-        * ************* 2. DECISION ******************
-        * ******************************************** 
-        * */
-       
-       /* Process with enemy tank */
-
-        if(detectedTankList.length > 0)
-        {
-            // need to select best tank to shoot
-            var tank = detectedTankList[0];
-            if( detectedBulletList.length == 0)
+            /*
+            if( this.m_coolDown == 0)
             {
-                // shoot at first tank that I see
-                this.setDirection( this.calcLineDirectionTo(tank.m_x, tank.m_y));
-                //printf("Tank[%s][%s] saw tank Tank[%s][%s] .Set direction to %s .", this.m_team, this.m_id, tank.m_team, tank.m_id, DIRECTIONS_TEXT[this.getDirection()]);
-                //echo("From [" + this.m_x + ", " + this.m_y + "] to [" + tank.m_x + ", " + tank.m_y + "].");
-                this.shoot(true);
-                shootEnemy = tank.m_id;
-                // keep moving if their direction in a line
-                if( IsDirectionInSameWay( this.getPathDirection(), tank.getDirection()) == false)
-                {
-                    //this.path = [];
-                }
-                this.path = [];
+                 this.findAnEnemyToShoot();
             }
             else
             {
                 this.goToSafeZone();
             }
+            */
+            
+        }
+
+        
+        if(this.m_id == 2)
+        {
+            //echo(">>>> Tank 2: path.length: " + this.path.length + ", x = " + this.m_x + ", y = " + this.m_y + ", tx=" + this.target[0] + ", ty="+ this.target[1]);
+            //echo(this.path);
         }
         
-        // shoot at base
-        if( shootEnemy == -1)
+        
+        
+        /* SHOOT ENEMY TANK IF SEE IT */
+        /* Look around, if dectect dangerous, shoot */
+        var move = true;
+        var enemys = GetEnemyList();
+        var shootEnemy = false;
+        for(var i in enemys)
         {
-                
+            var tank = enemys[i];
+            if( Math.abs( this.m_x - tank.m_x) < 0.5 || Math.abs( this.m_y - tank.m_y) < 0.5)
+            {
+                if( tank.m_HP > 0)
+                {
+                    if(this.canBeSee(tank.m_x, tank.m_y))
+                    {
+                        
+                        //if( this.m_type == TANK_LIGHT)
+                        {
+                            if( this.detectBullet() < 1)
+                            //if(true)
+                            {
+                                // shoot at first tank that I see
+                                this.setDirection( this.calcLineDirectionTo(tank.m_x, tank.m_y));
+                                //printf("Tank[%s][%s] saw tank Tank[%s][%s] .Set direction to %s .", this.m_team, this.m_id, tank.m_team, tank.m_id, DIRECTIONS[this.getDirection()]);
+                                //echo("From [" + this.m_x + ", " + this.m_y + "] to [" + tank.m_x + ", " + tank.m_y + "].");
+                                this.shoot(true);
+                                shootEnemy = true;
+                                // keep moving if their direction in a line
+                                if( IsDirectionInSameWay( this.getPathDirection()%4%2, tank.getDirection()%4%2))
+                                {
+                                    move = true;
+                                }
+                                else
+                                {
+                                    move = false;
+                                }
+                            }
+                            else
+                            {
+                                // chạy trốn nếu có nguy hiểm
+                                //this.goToSafeZone();
+                            }
+
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        //shoot at base
+        if(!shootEnemy && this.path.length == 0)
+        {
             var base = g_bases[GetOpponentTeam()][0];
             if( this.m_y > 9.5 && this.m_y < 11.5 || ( (GetOpponentTeam() == TEAM_1 && this.m_x < 1.5 ) || (GetOpponentTeam() == TEAM_2 && this.m_x > 18.5 ) ) )
             {
@@ -1527,24 +1488,46 @@ function Tank()
             }
         }
 
-        if( shootEnemy == -1 && this.path.length == 0)
+
+
+       /**********************************
+        **            MOVE              **
+        **********************************/
+        //console.log("target[0] = " + target[0] + ", target[1] = " + target[1] + ", t.m_x = " + t.m_x + ", t.m_y = " + t.m_y);
+        if( move == true)
         {
-            /* Làm thế nào để tìm kẻ địch khi mà nó cứ liên tục di chuyển không ở một chỗ*/
-            this.findAnEnemyToShoot();
             
+            while(this.path.length > 0)
+            {
+                // get next position
+                var next = this.path[this.path.length-1];
+                // Get next position is current is my position
+                if(next[0] == this.m_x && next[1] == this.m_y)
+                {
+                    /* Tạm thời: Cập nhật path sau mỗi bước di chuyển, vì kẻ địch cũng di chuyển*/
+                    //this.updatePath();
+                    /**/
+                    
+                    this.path.pop();
+                    //get next target
+                    next = this.path[this.path.length-1];
+                }
+                else
+                {
+                    this.jumpTo(next[0], next[1]);
+                    break;
+                }
+            }
         }
-
-
-
-
-       /* ******************************************** 
-        * ************* 3. PROCCESS  *****************
-        * ******************************************** 
-        * */
-
-       this.updatePosition();
        
        
+       /**********************************
+        **            SHOOT             **
+        **********************************/
+
+       
+
+       //echo("Tank "+this.m_id+" -> update() finished.\n\n");
        
     };
     
@@ -2518,8 +2501,6 @@ function Update()
     {
         printf(" Base: [%s, %s].", g_bases[g_team][0].m_x, g_bases[g_team][0].m_y);
         $INITED = true;
-        
-        printf("Can I See: %s", CanISee(8, 1.600000023841858, 13, 1.399999976158142));
         
         for(var i = 0; i < NUMBER_OF_TANK; i++)
         {

@@ -2,7 +2,7 @@
 
 "use strict";
 
-var _DEBUG = false;
+var _DEBUG = true;
 
 /* To calculate time execute to test performance */
 var performance =
@@ -422,7 +422,7 @@ function PathFinding()
         
         var t1 = performance.now();
     
-        echo("Find path from [", pathStart[0] , ", ", pathStart[1], "] to [", pathEnd[0], ", ", pathEnd[1], "] take " + (t1 - t0) + " s.\n");
+        printf("Find path from [", pathStart[0] , ", ", pathStart[1], "] to [", pathEnd[0], ", ", pathEnd[1], "] take " + (t1 - t0) + " s.\n");
 		return result;
 	};
     
@@ -693,7 +693,7 @@ var CanISee = function(x, y, t_x, t_y, visible_function)
             var chocolate = GetChocolateAt(X, Y);
             var tile = GetBrickAt(X, Y);
             var dead_chocolate = chocolate ? (chocolate.m_HP == 0) : false;
-            return (tile == BLOCK_GROUND || tile == BLOCK_WATER || (tile == BLOCK_SOFT_OBSTACLE && dead_chocolate));
+            return (tile == BLOCK_GROUND || tile == BLOCK_WATER/* || (tile == BLOCK_SOFT_OBSTACLE && dead_chocolate)*/);
         };
         
         if(visible_function(xi, yi) == false)
@@ -1083,13 +1083,6 @@ function Tank()
             var_dump(this.path);
         }
         
-        /* check for dangerous */
-        if(detectEnemyBullet(newPosition[0], newPosition[1]))
-        {
-            //printf("Tank[%d] updated path because dangerous.", this.m_id);
-            //this.updatePathToTarget();
-            //var_dump(this.path);
-        }
         
     };
     
@@ -1478,6 +1471,11 @@ function Tank()
     this.update = function()
     {
         
+        if( actionCenter.getCoolDown() == 0)
+        {
+            //printf("Gmap: " + g_map);
+        }
+        //return;
         //printf("\n\nTank %d -> update();", this.m_id);
         
         /*
@@ -1498,9 +1496,9 @@ function Tank()
         var detectedBulletList = this.detectBullet();
         var detectedTankList = [];
         
-        /* In future */
+        /* In future. before move */
         var newPosition = this.getPositionInNextFrame();
-        var newDetectedBulletList = this.detectBulletNextFrame();
+        var newDetectedBulletList = detectEnemyBullet(newPosition[0], newPosition[1]);
 
         
         // Đánh giá kẻ địch xung quanh
@@ -1508,19 +1506,18 @@ function Tank()
         for(var i in enemys)
         {
             var tank = enemys[i];
-            if( tank.m_HP == 0)
+            if( tank.m_HP > 0)
             {
-                continue;
-            }
             
-            // check if I can hit another
-            if( Math.abs( this.m_x - tank.m_x) < 0.5 || Math.abs( this.m_y - tank.m_y) < 0.5)
-            {
-                //printf(">>> Tank %s at [%f, %f] in a line with tank Tank %s at [%f, %f].", this.m_id, this.m_x, this.m_y, tank.m_id, tank.m_x, tank.m_y);
-                if(this.canBeSee(tank.m_x, tank.m_y))
+                // check if I can hit another
+                if( Math.abs( this.m_x - tank.m_x) < 0.5 || Math.abs( this.m_y - tank.m_y) < 0.5)
                 {
-                    printf(">>> Tank %s saw tank Tank %s .", this.m_id, tank.m_id);
-                    detectedTankList.push(tank);
+                    //printf(">>> Tank %s at [%f, %f] in a line with tank Tank %s at [%f, %f].", this.m_id, this.m_x, this.m_y, tank.m_id, tank.m_x, tank.m_y);
+                    if(this.canBeSee(tank.m_x, tank.m_y))
+                    {
+                        printf(">>> Tank %s saw tank Tank %s .", this.m_id, tank.m_id);
+                        detectedTankList.push(tank);
+                    }
                 }
             }
         }
@@ -1588,11 +1585,22 @@ function Tank()
 
 
 
+
+
        /* ******************************************** 
         * ************* 3. PROCCESS  *****************
         * ******************************************** 
         * */
-
+       
+        /* check for dangerous */
+        if(newDetectedBulletList.length > 0)
+        {
+            printf("Tank[%d] updated path because dangerous.", this.m_id);
+            this.updatePathToTarget();
+            var_dump(this.path);
+        }
+       
+       /* tank will move or stop, direction to move, .... */
        this.updatePosition();
        
        
@@ -1659,6 +1667,8 @@ function GetEnemyList()
 {
     return g_tanks[GetOpponentTeam()];
 }
+
+
 function GetEnemyBasePlaces()
 {
     return 0;
@@ -1684,23 +1694,20 @@ function GetMap(tank_id)
     for(var k in h)
     {
         var e = h[k];
-        // những con đã chết sẽ là vật cản
-        //if(e.m_HP == 0)
-        {
-	        var t_x = e.m_x, t_y = e.m_y;
-	        l[Math.floor(t_y)][Math.floor(t_x)] = BLOCK_TANK;
-	        l[Math.ceil(t_y)][Math.ceil(t_x)] = BLOCK_TANK;
-	        l[Math.floor(t_y)][Math.ceil(t_x)] = BLOCK_TANK;
-	        l[Math.ceil(t_y)][Math.floor(t_x)] = BLOCK_TANK;
-    	}
+
+        var t_x = e.m_x, t_y = e.m_y;
+        l[Math.floor(t_y)][Math.floor(t_x)] = BLOCK_TANK;
+        l[Math.ceil(t_y)][Math.ceil(t_x)] = BLOCK_TANK;
+        l[Math.floor(t_y)][Math.ceil(t_x)] = BLOCK_TANK;
+        l[Math.ceil(t_y)][Math.floor(t_x)] = BLOCK_TANK;
     }
     
     h = GetMyTeamList();
     for(var k in h)
     {
         var e = h[k];
-        // Bỏ qua vị trí mà nó đang đứng &&  bỏ qua những con đã chết
-        if( e.m_id != tank_id /*&& e.m_HP == 0*/)
+        // Bỏ qua vị trí mà nó đang đứng
+        if( e.m_id != tank_id)
         //if(e.m_HP == 0)
         {
 	        var t_x = e.m_x, t_y = e.m_y;
@@ -1710,8 +1717,7 @@ function GetMap(tank_id)
 	        l[Math.ceil(t_y)][Math.floor(t_x)] = BLOCK_TANK;
     	}
     }
-    
-    //echo(l);
+
     
     return l;
 }
@@ -1869,6 +1875,7 @@ function OnMessage(data)
         }
         else if (command == COMMAND_UPDATE_MAP)
         {
+            printf("update map.");
             g_hardObstacles = [];
             for (var i = 0; i < MAP_W; i++)
             {
@@ -1976,6 +1983,12 @@ function ProcessUpdateObstacleCommand(data, originalOffset)
     g_obstacles[id].m_x = x;
     g_obstacles[id].m_y = y;
     g_obstacles[id].m_HP = HP;
+    
+    //change obstacle to ground if it dead.
+    if(g_obstacles[id].m_HP <= 0)
+    {
+        g_map[y * MAP_W + x] = BLOCK_GROUND;
+    }
 
     return offset - originalOffset;
 }
@@ -2429,7 +2442,7 @@ function GetPowerUpList()
     var powerUp = [];
     for (var i = 0; i < g_powerUps.length; i++)
     {
-        if (g_powerUps[i].m_active)
+        if ( g_powerUps[i] && g_powerUps[i].m_active)
         {
             powerUp.push(g_powerUps[i]);
         }

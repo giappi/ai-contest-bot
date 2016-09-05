@@ -1,8 +1,3 @@
-
-
-
-
-
 // Stuff...
 var Enum = require("./Config/Enum");
 var Setting = require("./Config/Setting");
@@ -15,8 +10,6 @@ var Bullet = require("./Objects/Bullet");
 var Base = require("./Objects/Base");
 var PowerUp = require("./Objects/PowerUp")
 var Strike = require("./Objects/Strike");
-
-
 
 // Require filesystem
 var fs = require('fs');
@@ -649,8 +642,18 @@ module.exports = function Game (key1, key2, replayFilename) {
 			}
 			//Should turn on sudden death mode?
 			else if ((instance.m_state == Enum.STATE_ACTION) && (instance.m_loopNumber >= Setting.LOOPS_SUDDEN_DEATH)) {
-				instance.SetSuddenDeathMode();
-				stateUpdatePacket = instance.GetStateUpdatePacket();
+				if(!instance.CheckWinLost120s())
+				{
+					instance.SetSuddenDeathMode();
+					stateUpdatePacket = instance.GetStateUpdatePacket();
+				}
+				else
+				{
+					instance.m_matchResult = (instance.m_loser[Enum.TEAM_1] == false) ? Enum.MATCH_RESULT_TEAM_1_WIN : Enum.MATCH_RESULT_TEAM_2_WIN;
+					instance.m_state = Enum.STATE_FINISHED;
+					matchResultPacket = instance.GetMatchResultPackage();
+					stateUpdatePacket = instance.GetStateUpdatePacket();
+				}
 			}
 			//or time's up?
 			else if ((instance.m_state == Enum.STATE_SUDDEN_DEATH) && (instance.m_loopNumber >= Setting.LOOPS_MATCH_END)) {
@@ -744,17 +747,48 @@ module.exports = function Game (key1, key2, replayFilename) {
 			
 		//Check win-lost in SuddenDeath mode
 		if ((this.m_state == Enum.STATE_SUDDEN_DEATH) && (this.m_teamLostSuddenDeath != -1)) {
-			if (this.m_teamLostSuddenDeath == Enum.TEAM_1) {
+			if (this.m_loser[Enum.TEAM_1] && this.m_loser[Enum.TEAM_2]){ //both teams have base destroyed
+				this.m_matchResult = Enum.MATCH_RESULT_DRAW;
+			}
+			else if (this.m_teamLostSuddenDeath == Enum.TEAM_1) {
 				this.m_matchResult = Enum.MATCH_RESULT_TEAM_2_WIN;
-				this.m_loser[Enum.TEAM_1] = true;
 			}
 			else {
 				this.m_matchResult = Enum.MATCH_RESULT_TEAM_1_WIN;
-				this.m_loser[Enum.TEAM_2] = true;
 			}
 			return true;
 		}
 		
+		return false;
+	}
+	
+	this.CheckWinLost120s = function() {
+		//Check bases living
+		var count1 = 0;
+		var count2 = 0;
+		for (var i=0; i<this.m_bases[Enum.TEAM_1].length; i++) {
+			if (this.m_bases[Enum.TEAM_1][i].m_HP > 0) {
+				count1++;
+			}
+		}
+		for (var i=0; i<this.m_bases[Enum.TEAM_2].length; i++) {
+			if (this.m_bases[Enum.TEAM_2][i].m_HP > 0) {
+				count2++;
+			}
+		}
+		
+		if (count1 < count2) {
+			//must set both values because function CheckWinLost need both
+			this.m_loser[Enum.TEAM_1] = true;
+			this.m_loser[Enum.TEAM_2] = false;
+			return true;
+		}
+		else if (count1 > count2) {
+			//must set both values because function CheckWinLost need both
+			this.m_loser[Enum.TEAM_1] = false;
+			this.m_loser[Enum.TEAM_2] = true;
+			return true;
+		}
 		return false;
 	}
 	
@@ -817,7 +851,7 @@ module.exports = function Game (key1, key2, replayFilename) {
 			this.m_matchResult = (this.m_loser[Enum.TEAM_1] == false) ? Enum.MATCH_RESULT_TEAM_1_WIN : Enum.MATCH_RESULT_TEAM_2_WIN;
 			console.log("ProcessTimeUp, match result: " + this.m_matchResult);
 		}
-		else { //need more checking here, if no base's destroyed -> DRAW_NEGATIVE
+		else { //need more checking here, if no base or tank is destroyed -> DRAW_NEGATIVE
 			var count = 0;
 			for (var i=0; i<this.m_bases[Enum.TEAM_1].length; i++) {
 				if (this.m_bases[Enum.TEAM_1][i].m_HP == 0)	{

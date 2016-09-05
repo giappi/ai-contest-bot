@@ -728,28 +728,6 @@ function detectEnemyBullet(x, y)
 }
 
 
-function findPlaceDropBomb()
-{
-    /* Thứ tự chọn nơi thả bom:
-     * 1. Chọn nơi có đông kẻ địch nhất, nhưng ít tank ở team mình nhất
-     * 2. Chọn tank có ít HP nhất
-     * 3. Chọn base
-     * */
-
-    var most;
-    for( var tank of GetEnemyList())
-    {
-        var concentration = 0;
-        for( var other of GetEnemyList())
-        {
-            if( tank != other)
-            {
-                //if( GetDistance)
-            }
-        }
-    }
-}
-
 
 
 
@@ -1375,7 +1353,7 @@ function Tank()
     this.update = function()
     {
         
-        this.setDirection(DIRECTION_LEFT);
+        this.setDirection(g_team == TEAM_2 ? DIRECTION_LEFT : DIRECTION_RIGHT);
         this.shoot();
        
     };
@@ -2334,10 +2312,29 @@ function OnPlaceTankRequest()
     SendCommand();
 }
 
+var actionCenter = {};
+actionCenter.coolDownToUpdate = 10;
+actionCenter.getCoolDown = function()
+{
+    this.coolDownToUpdate--;
+    if(this.coolDownToUpdate < 0)
+    {
+        this.coolDownToUpdate = 20;
+    }
+    return this.coolDownToUpdate;
+};
+
 function Update()
 {
     //var t0 = performance.now();
     //echo(">>> Update(): ");
+    
+    
+    if( actionCenter.coolDownToUpdate == 0)
+    {
+        var_dump(g_map);
+    }
+    
     
     //echo(GetMap());
     

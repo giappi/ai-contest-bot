@@ -27,7 +27,10 @@ module.exports = function Base (game, id, x, y, team, type) {
 			
 			//if base lost in sudden death mode -> team lost
 			if(game.m_state == Enum.STATE_SUDDEN_DEATH)
+			{
 				game.m_teamLostSuddenDeath = this.m_team;
+				game.m_loser[this.m_team] = true;
+			}
 		}
 		
 		this.m_dirty = true;

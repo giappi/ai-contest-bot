@@ -629,10 +629,21 @@ function GSActionPhase () {
 		
 		
 		// Draw all undestructible obstacles
-		for (var i=0; i<MAP_W; i++) {
-			for (var j=0; j<MAP_H; j++) {
-				if (this.m_map[j * MAP_W + i] == BLOCK_HARD_OBSTACLE) {
+		for (var i=0; i<MAP_W; i++)
+        {
+			for (var j=0; j<MAP_H; j++)
+            {
+				if (this.m_map[j * MAP_W + i] == BLOCK_HARD_OBSTACLE)
+                {
 					g_graphicEngine.DrawFast (g_context, imgConcrete, i * BLOCK_SIZE + this.m_screenShakeX, j * BLOCK_SIZE + this.m_screenShakeY);
+                    if(i == 0 || i == MAP_W - 1)
+                    {
+                        g_graphicEngine.DrawTextRGB(g_context, j.toString(), i * BLOCK_SIZE + 7 + this.m_screenShakeX, j * BLOCK_SIZE + 7 + this.m_screenShakeY, 16, null, 16);
+                    }
+                    if(j == 0 || j == MAP_H - 1)
+                    {
+                        g_graphicEngine.DrawTextRGB(g_context, i.toString(), i * BLOCK_SIZE + 7 + this.m_screenShakeX, j * BLOCK_SIZE + 7 + this.m_screenShakeY, 16, null, 16);
+                    }
 				}
 			}
 		}

@@ -110,30 +110,57 @@ module.exports = function Bullet (game, team, id) {
 		}
 		
 		// Check landscape
-		var roundedX = (this.m_x + 0.5) >> 0;
-		var roundedY = (this.m_y + 0.5) >> 0;
+		var checkX = 1;
+		var checkY = 1;
+		var roundedX = (this.m_x + 0.499) >> 0;
+		var roundedY = (this.m_y + 0.499) >> 0;
 		
-		if (game.m_map[roundedY * Setting.MAP_W + roundedX] == Enum.BLOCK_HARD_OBSTACLE
-			||  game.m_map[roundedY * Setting.MAP_W + roundedX] == Enum.BLOCK_SOFT_OBSTACLE
-			||  game.m_map[roundedY * Setting.MAP_W + roundedX] == Enum.BLOCK_BASE) 
-		{
-			this.m_needToAnnounceHit = true;
-			this.m_live = false;
-			//le.huathi - update obstacle HP
-			if(game.m_map[roundedY * Setting.MAP_W + roundedX] == Enum.BLOCK_SOFT_OBSTACLE) {
-				obstacle = game.GetObstacle(roundedX, roundedY);
-				if(obstacle != null) {
-					obstacle.Hit(this.m_damage);
-				}
-			}
-			//le.huathi - update player base's HP
-			else if(game.m_map[roundedY * Setting.MAP_W + roundedX] == Enum.BLOCK_BASE) {
-				base = game.GetBase(roundedX, roundedY);
-				if(base != null) {
-					base.Hit(this.m_damage);
+		if (this.m_x % 1 > 0.49999 && this.m_x % 1 < 0.50001) {
+			checkX = 2;
+		}
+		if (this.m_y % 1 > 0.49999 && this.m_y % 1 < 0.50001) {
+			checkY = 2;
+		}
+		
+		for (var i=0; i<checkX; i++) {
+			for (var j=0; j<checkY; j++) {
+				var tempX = roundedX + i;
+				var tempY = roundedY + j;
+				
+				if (game.m_map[tempY * Setting.MAP_W + tempX] == Enum.BLOCK_BASE) 
+				{
+					this.m_needToAnnounceHit = true;
+					this.m_live = false;
+					base = game.GetBase(tempX, tempY);
+					if(base != null) {
+						base.Hit(this.m_damage);
+					}
+					return;
 				}
 			}
 		}
+		
+		for (var i=0; i<checkX; i++) {
+			for (var j=0; j<checkY; j++) {
+				var tempX = roundedX + i;
+				var tempY = roundedY + j;
+				
+				if (game.m_map[tempY * Setting.MAP_W + tempX] == Enum.BLOCK_HARD_OBSTACLE
+					||  game.m_map[tempY * Setting.MAP_W + tempX] == Enum.BLOCK_SOFT_OBSTACLE) 
+				{
+					this.m_needToAnnounceHit = true;
+					this.m_live = false;
+					if(game.m_map[tempY * Setting.MAP_W + tempX] == Enum.BLOCK_SOFT_OBSTACLE) {
+						obstacle = game.GetObstacle(tempX, tempY);
+						if(obstacle != null) {
+							obstacle.Hit(this.m_damage);
+						}
+					}
+					return;
+				}
+			}
+		}
+		
 	}
 	
 	this.CheckCollisionWithTank = function () {

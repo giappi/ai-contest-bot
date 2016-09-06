@@ -3,6 +3,7 @@
 "use strict";
 
 var _DEBUG = process.argv.indexOf("--debug") > -1;
+_DEBUG = true;
 var logs = "";
 
 
@@ -684,6 +685,11 @@ function GetDistance(point1, point2)
 {
     // manhattan  distance
     return Math.abs(point1[0] - point2[0]) + Math.abs(point1[1] - point2[1]);
+}
+
+function GetEuclidDistance(point1, point2)
+{
+    return Math.hypot(point1[0] - point2[0], point1[1] - point2[1]);
 }
 
 /**
@@ -1481,6 +1487,8 @@ function Tank()
         {
             return GetDistance(that.m_x, that.m_y, b1.m_x, b1.m_y) - GetDistance(that.m_x, that.m_y, b2.m_x, b2.m_y);
         });
+        
+        
         var detectedTankList = [];
         
 
@@ -1518,11 +1526,15 @@ function Tank()
         // detect bullet first
         if( detectedBulletList.length > 0)
         {
+            /*
             // tính toán thời gian đạn gần có thể gây nguy hiểm
             var bullet = detectedBulletList[0];
-            var time_to_hit = GetDistance([bullet.m_x, bullet.m_y], [this.m_x, this.m_y]) /bullet.m_speed;
+            var time_to_hit = GetEuclidDistance([bullet.m_x, bullet.m_y], [this.m_x, this.m_y]) /bullet.m_speed;
             var time_to_avoid = 1/this.m_speed;
-            if(time_to_hit < time_to_avoid)
+            printf("Time to hit: %f, time to avoid: %f, bullet.speed : %f, my.speed: %f", time_to_hit, time_to_avoid, bullet.m_speed, this.m_speed);
+            */
+            //if(time_to_hit <= time_to_avoid)
+            if(true)
             {
                 this.goToSafeZone();
             }
@@ -1622,6 +1634,8 @@ function Tank()
             this.updatePosition();
         }
         
+        
+        //printf(">> Tank %d , Hg: Command to send: moving = %d, shoot = %d, direction = %s", this.m_id, moving, shooting, DIRECTIONS_TEXT[this.getDirection()]);
        
     };
     

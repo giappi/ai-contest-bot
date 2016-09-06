@@ -634,17 +634,50 @@ var DecodeFloat32 = function(string, offset)
 // =============================================
 
 
-
-var actionCenter = {};
-actionCenter.coolDownToUpdate = 10;
-actionCenter.getCoolDown = function()
+var BaseDamageEvent =
 {
-    this.coolDownToUpdate--;
-    if(this.coolDownToUpdate < 0)
+    tankList: []
+};
+
+var EnemyEnterEvent =
+{
+    tankId: []
+};
+
+var actionCenter =
+{
+    coolDownToUpdate : 10,
+    /**
+     * 
+     * @returns {Number}
+     */
+    getCoolDown: function()
     {
-        this.coolDownToUpdate = 40;
+        this.coolDownToUpdate--;
+        if(this.coolDownToUpdate < 0)
+        {
+            this.coolDownToUpdate = 40;
+        }
+        return this.coolDownToUpdate;
+    },
+    /**
+     * Active when my base is damaged
+     * @param {BaseDamageEvent} event
+     * @returns {undefined}
+     */
+    onBaseDemage: function(event)
+    {
+        
+    },
+    /**
+     * Trigger when a tank enter my side
+     * @param {EnemyEnterEvent} event
+     * @returns {undefined}
+     */
+    onEnemyEnter: function(event)
+    {
+        
     }
-    return this.coolDownToUpdate;
 };
 
 function GetDistance(point1, point2)
@@ -815,7 +848,6 @@ function detectEnemyBullet(x, y)
                     && CanISee(bullet.m_x, bullet.m_y, x, y)
                )
             {
-                
                 bullets.push(bullet);
             }
         }
@@ -1435,8 +1467,6 @@ function Tank()
     
     this.update = function()
     {
-        //printf("\n************************  UPDATE *************************\n");
-        
 
        
        /* ******************************************** 
@@ -1488,7 +1518,14 @@ function Tank()
         // detect bullet first
         if( detectedBulletList.length > 0)
         {
-            this.goToSafeZone();
+            // tính toán thời gian đạn gần có thể gây nguy hiểm
+            var bullet = detectedBulletList[0];
+            var time_to_hit = GetDistance([bullet.m_x, bullet.m_y], [this.m_x, this.m_y]) /bullet.m_speed;
+            var time_to_avoid = 1/this.m_speed;
+            if(time_to_hit < time_to_avoid)
+            {
+                this.goToSafeZone();
+            }
         }
         else
         if(detectedTankList.length > 0)
@@ -2603,6 +2640,10 @@ function OnPlaceTankRequest()
 
 function Update()
 {
+    
+    printf("\n************************  UPDATE *************************\n");
+        
+    
     //var t0 = performance.now();
     //echo(">>> Update(): ");
     

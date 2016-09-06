@@ -1078,13 +1078,7 @@ function Tank()
         
         // Tìm đường đi đến mục tiêu                                                   * Temp fix to test
         var path = pathFinder.find1(GetMap(this.m_id), [this.m_x >> 0, this.m_y >> 0], [x, y]);
-        this.path = path.reverse();
-        /* Temp fix, important! Because path finding work with integer, but tank is float */
-        if(this.path.length > 1)
-        {
-            // revove current position
-            this.path.pop();
-        }
+        this.setPath(path);
         
         //echo(`>>> Tank ${this.m_id} Find path from  = [${this.m_x | 0}, ${this.m_y | 0}] to [${x}, ${y}]`);
         //echo(this.path);
@@ -1112,13 +1106,7 @@ function Tank()
         
         // Tìm đường đi đến mục tiêu                                                   * Temp fix to test
         var path = pathFinder.findPath(GetMap(this.m_id), [ Math.round(this.m_x), Math.round(this.m_y)], [x, y], targetFx);
-        this.path = path.reverse();
-        /* Temp fix, important! Because path finding work with integer, but tank is float */
-        if(this.path.length > 1)
-        {
-            // revove current position
-            this.path.pop();
-        }
+        this.setPath(path);
         
         
 
@@ -1252,7 +1240,7 @@ function Tank()
     this.findAnEnemyToShoot = function()
     {
         
-        /*
+        
         
         // get enemy that they are alive
         var enemys = GetEnemyList().filter(e => e.m_HP > 0);
@@ -1265,6 +1253,8 @@ function Tank()
             //echo("Compare distance " + d1 + " .... " + d2);
             return  d1 - d2;
         });
+        
+        var enemys_in_my_side = enemys.filter(tank => that.IsMySide(tank.m_x, tank.m_y));
 
         //echo("Enemy: ");
         //echo(enemys.map((e) => "Tank " + e.m_id + ": " + GetDistance([this.m_x, this.m_y], [e.m_x, e.m_y])));
@@ -1274,49 +1264,46 @@ function Tank()
         {
             return;
         }
+        
+        
+        var priority_tanklist = enemys_in_my_side.concat(enemys);
 
-        for(var i = 0; i < enemys.length; i++)
+        for(var i = 0; i < priority_tanklist.length; i++)
         {
-            var tank = enemys[i];
-            if( tank.m_HP > 0)
+            var tank = priority_tanklist[i];
+
+            this.target = [Math.round(tank.m_x), Math.round(tank.m_y)];
+            var path = pathFinder.findPath(GetMap(this.m_id), [ Math.round(this.m_x), Math.round(this.m_y)], [Math.round(tank.m_x), Math.round(tank.m_y)], targetFx);
+            this.path = path.reverse();
+            // Temp fix, important! Because path finding work with integer, but tank is float 
+            if(this.path.length > 1)
             {
-                this.target = [Math.round(tank.m_x), Math.round(tank.m_y)];
-                var path = pathFinder.findPath(GetMap(this.m_id), [ Math.round(this.m_x), Math.round(this.m_y)], [Math.round(tank.m_x), Math.round(tank.m_y)], targetFx);
-                this.path = path.reverse();
-                // Temp fix, important! Because path finding work with integer, but tank is float 
-                if(this.path.length > 1)
-                {
-                    // revove current position
-                    this.path.pop();
-                }
-                printf(" Tank %d find path for find enemy of tank ", this.m_id);
-                var_dump(this.path);
-                // Tồn tại đường đi từ tank tới tank
-                if(this.path.length > 0)
-                {
-                    return tank;
-                }
+                // revove current position
+                this.path.pop();
             }
+            printf(" Tank %d find path for find enemy of tank ", this.m_id);
+            var_dump(this.path);
+            // Tồn tại đường đi từ tank tới tank
+            if(this.path.length > 0)
+            {
+                return tank;
+            }
+
         }
 
-        */
+        
 
         //find base
-        //if( this.path.length == 0)
-        if(true)
+        if( this.path.length == 0)
+        //if(true)
         {
 
             var path = pathFinder.findPath(GetMap(this.m_id), [ Math.round(this.m_x), Math.round(this.m_y)], [ Math.round(g_bases[GetOpponentTeam()][0].m_x), Math.round(g_bases[GetOpponentTeam()][0].m_y)], function(pointer, target )
             {
                 return (pointer.y > 9.5 && pointer.y < 11.5 || ( (GetOpponentTeam() == TEAM_1 && pointer.x < 1.5 ) || (GetOpponentTeam() == TEAM_2 && pointer.x > 18.5 ) )) && CanISee(pointer.x, pointer.y, target.x, target.y, visibleFx);
             });
-            this.path = path.reverse();
-            /* Temp fix, important! Because path finding work with integer, but tank is float */
-            if(this.path.length > 1)
-            {
-                // remove my position
-                this.path.pop();
-            }
+            
+            this.setPath(path);
 
             printf(" Tank %d find path for base. ", this.m_id);
             var_dump(this.path);
@@ -1351,13 +1338,7 @@ function Tank()
         });
         
         
-        this.path = path.reverse();
-        /* Temp fix, important! Because path finding work with integer, but tank is float */
-        if(this.path.length > 1)
-        {
-            // revove current position
-            this.path.pop();
-        }
+        this.setPath(path);
         printf("Path found for goToSafeZone: ");
         var_dump(this.path);
        
@@ -1454,7 +1435,7 @@ function Tank()
     
     this.update = function()
     {
-        printf("\n************************  UPDATE *************************\n");
+        //printf("\n************************  UPDATE *************************\n");
         
 
        

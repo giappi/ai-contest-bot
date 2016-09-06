@@ -678,6 +678,11 @@ var actionCenter =
     onEnemyEnter: function(event)
     {
         
+    },
+    
+    onPowerUpDrop: function(event)
+    {
+        
     }
 };
 
@@ -1115,7 +1120,7 @@ function Tank()
         this.target = [x, y];
         
         // Tìm đường đi đến mục tiêu                                                   * Temp fix to test
-        var path = pathFinder.find1(GetMap(this.m_id), [this.m_x >> 0, this.m_y >> 0], [x, y]);
+        var path = pathFinder.find1(GetMap(this.m_id), [ Math.round(this.m_x), Math.round(this.m_y)], [x, y]);
         this.setPath(path);
         
         //echo(`>>> Tank ${this.m_id} Find path from  = [${this.m_x | 0}, ${this.m_y | 0}] to [${x}, ${y}]`);
@@ -1292,7 +1297,12 @@ function Tank()
             return  d1 - d2;
         });
         
-        var enemys_in_my_side = enemys.filter(tank => that.IsMySide(tank.m_x, tank.m_y));
+        
+        // Get tanks in my side and sort by distance to base
+        var enemys_in_my_side = enemys.filter(tank => that.IsMySide(tank.m_x, tank.m_y)).sort( function(t1, t2)
+        {
+            return GetDistance([g_bases[GetOpponentTeam()][0].m_x, g_bases[GetOpponentTeam()][0].m_y], [t1.m_x, t1.m_y]) - GetDistance([g_bases[GetOpponentTeam()][0].m_x, g_bases[GetOpponentTeam()][0].m_y], [t2.m_x, t2.m_y]);
+        });
 
         //echo("Enemy: ");
         //echo(enemys.map((e) => "Tank " + e.m_id + ": " + GetDistance([this.m_x, this.m_y], [e.m_x, e.m_y])));
@@ -1493,7 +1503,7 @@ function Tank()
         
 
         
-        // Đánh giá kẻ địch xung quanh
+        // Phát hiện kẻ địch
         var enemys = GetEnemyList();
         for(var i in enemys)
         {
@@ -1545,6 +1555,12 @@ function Tank()
         if(detectedTankList.length > 0)
         {
             // need to select best tank to shoot
+            // sort by freeze tank
+            detectedTankList = detectedTankList.sort(function(t1, t2)
+            {
+                return t2.m_disabled - t1.disabled;
+            });
+            
             var tank = detectedTankList[0];
 
             // shoot at first tank that I see
@@ -1649,44 +1665,7 @@ function Tank()
     };
     
     
-    this.coutObstaclesFrom = function(t_x, t_y)
-    {
-
-        var d = this.calcLineDirectionTo(t_x, t_y)%4; // [left, top, right, bottom][d]
-        //echo("d = " + d);
-        var vertical = d%2;
-        
-        var tile, i, x0 = this.m_x + 0.5 >> 0, y0 = this.m_y + 0.5 >> 0;
-        var begin = vertical ? y0 : x0;
-        var end   = vertical ? t_y + 0.5 >> 0 : t_x + 0.5 >> 0;
-        echo("d = " + d);
-        var delta = [[-1, 0], [0, -1], [1, 0], [0, 1]][d][vertical];
-        
-        echo("From : " + begin + " to " + end);
-
-        //var trace = [];
-        //echo("vertical = " + vertical + ", For i = " + begin + ", delta =" + L[d][vertical]);
-        var price = 0;
-        for(i = begin; delta > 0 ? i <= end : end <= i; i += delta)
-        {
-            //trace.push(!vertical ? [i, y0] : [x0, i]);
-            tile = !vertical ? GetBrickAt(i, y0) : GetBrickAt(x0, i);
-            //check for enemy tank
-
-            //echo("tile[" + (vertical ? x0 : i) + "][" + (vertical ? i : y0) + "] = " + tile + ", " + BLOCKS[tile]);
-            if(!(tile == BLOCK_GROUND || tile == BLOCK_WATER))
-            {
-                price += BLOCK_OBSTACLNESS[tile];
-            }
-        }
-        
-        return price;
-        
-    };
-    
-    
-    
-    
+ 
     
    
 }
@@ -2713,7 +2692,7 @@ function Update()
         
         if(logs != "")
         {
-            post(logs);
+            //post(logs);
             logs = "";
         }
         
@@ -2741,7 +2720,8 @@ function Update()
             // You may want to do something here, like moving your tank away if the strike is on top of your tank.
             
         }
-        else if (type == POWERUP_EMP)
+        else
+        if (type == POWERUP_EMP)
         {
             // Run... RUN!!!!
         }
@@ -2799,14 +2779,9 @@ function Update()
         // Don't waste effort if tank was dead
         if (t && t.m_HP > 0)
         {
-            // update
             t.update();
-  
-            // send request
             t.sendCommand();
         }
-
-
     }
     
 

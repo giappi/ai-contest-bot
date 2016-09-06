@@ -1526,6 +1526,8 @@ function Tank()
         // detect bullet first
         if( detectedBulletList.length > 0)
         {
+            /* To do: nếu đang bắn base, và HP còn nhiều, base.HP ít, thì không tránh đạn*/
+            
             /*
             // tính toán thời gian đạn gần có thể gây nguy hiểm
             var bullet = detectedBulletList[0];

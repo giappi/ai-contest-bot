@@ -2,10 +2,8 @@
 
 "use strict";
 
-var _DEBUG = process.argv.indexOf("--debug") > -1;
+var _DEBUG = false;
 var logs = "";
-
-
 
 /* To calculate time execute to test performance */
 var performance =
@@ -19,7 +17,7 @@ var performance =
 
 
 
-if(!_DEBUG)
+if(_DEBUG)
 {
     console.log = function()
     {
@@ -678,15 +676,13 @@ var calcLineDirectionTo = function(x0, y0, x1, y1)
     //calculate direction
     var dx = x1 - x0;
     var dy = y1 - y0;
-    
-    // dont like but must <=1 to avoid error when calculate direction
-    return dx > 0 && Math.abs(dy/dx) <= 1 ? DIRECTION_RIGHT : dx < 0 && Math.abs(dy/dx) <= 1 ? DIRECTION_LEFT : dy > 0 && Math.abs(dx/dy) <= 1 ? DIRECTION_DOWN : dy < 0 && Math.abs(dx/dy) <= 1 ? DIRECTION_UP : -1;
-    //return dx > 0 && Math.abs(dy/dx) < 1 ? DIRECTION_RIGHT : dx < 0 && Math.abs(dy/dx) < 1 ? DIRECTION_LEFT : dy > 0 && Math.abs(dx/dy) < 1 ? DIRECTION_DOWN : dy < 0 && Math.abs(dx/dy) < 1 ? DIRECTION_UP : -1;
+
+    return dx > 0 && Math.abs(dy/dx) < 1 ? DIRECTION_RIGHT : dx < 0 && Math.abs(dy/dx) < 1 ? DIRECTION_LEFT : dy > 0 && Math.abs(dx/dy) < 1 ? DIRECTION_DOWN : dy < 0 && Math.abs(dx/dy) < 1 ? DIRECTION_UP : -1;
 };
 
 
 /**
- * Đứng từ [x, y] có nhìn thấy được [t_x, t_y].
+ * Đứng từ [x, y] có nhìn thấy được [t_x, t_y]. Nhìn thấy kẻ địch
  * @param {int} x
  * @param {int} y
  * @param {int} t_x
@@ -735,7 +731,7 @@ var CanISee = function(x, y, t_x, t_y, visible_function)
     }
     
 
-    var i, x0 = Math.round(x),   y0 = Math.round(y),
+    var i, x0 = Math.round(x), y0 = Math.round(y),
            x1 = Math.round(t_x), y1 = Math.round(t_y);
     var begin = vertical ? y0 : x0;
     var end   = vertical ? y1 : x1;
@@ -1038,7 +1034,7 @@ function Tank()
         }
         
         //var tile = this.getTileForward();
-        //if( this.m_id == 3)
+        if( this.m_id == 3)
         {
             printf("Tank %d: [%f, %f] -> [%f, %f] ", this.m_id, this.m_x, this.m_y, x, y);
         }
@@ -1306,6 +1302,8 @@ function Tank()
         if(true)
         {
 
+
+
             var path = pathFinder.findPath(GetMap(this.m_id), [ Math.round(this.m_x), Math.round(this.m_y)], [ Math.round(g_bases[GetOpponentTeam()][0].m_x), Math.round(g_bases[GetOpponentTeam()][0].m_y)], function(pointer, target )
             {
                 return (pointer.y > 9.5 && pointer.y < 11.5 || ( (GetOpponentTeam() == TEAM_1 && pointer.x < 1.5 ) || (GetOpponentTeam() == TEAM_2 && pointer.x > 18.5 ) )) && CanISee(pointer.x, pointer.y, target.x, target.y, visibleFx);
@@ -1314,7 +1312,7 @@ function Tank()
             /* Temp fix, important! Because path finding work with integer, but tank is float */
             if(this.path.length > 1)
             {
-                // remove my position
+                // revove my position
                 this.path.pop();
             }
 
@@ -1344,11 +1342,11 @@ function Tank()
         printf("Tank %d go to safezone.", this.m_id);
         
 
-        // Tìm nơi không có đạn
-        var path = pathFinder.findPath(GetMap(this.m_id), [ Math.round(this.m_x), Math.round(this.m_y)], [ Math.round(this.target[0]), Math.round(this.target[1])], function(pointer, target)
+        // Tìm nơi không có đạn và không có tank nhìn thấy
+        var path = pathFinder.findPath(GetMap(this.m_id), [this.m_x >> 0, this.m_y >> 0], [this.target[0] >> 0, this.target[1] >> 0], function(pointer, target)
         {
-            return detectEnemyBullet(pointer.x, pointer.y).length < 1;
-        });
+                return detectEnemyBullet(pointer.x, pointer.y).length < 1;
+            });
         
         
         this.path = path.reverse();
@@ -1384,18 +1382,15 @@ function Tank()
             {
                 newY = this.m_y - this.m_speed;
             }
-            else
-            if (this.m_direction == DIRECTION_DOWN)
+            else if (this.m_direction == DIRECTION_DOWN)
             {
                 newY = this.m_y + this.m_speed;
             }
-            else
-            if (this.m_direction == DIRECTION_LEFT)
+            else if (this.m_direction == DIRECTION_LEFT)
             {
                 newX = this.m_x - this.m_speed;
             }
-            else
-            if (this.m_direction == DIRECTION_RIGHT)
+            else if (this.m_direction == DIRECTION_RIGHT)
             {
                 newX = this.m_x + this.m_speed;
             }
@@ -1409,13 +1404,6 @@ function Tank()
         var new_pos = this.getPositionInNextFrame();
         return detectEnemyBullet(new_pos[0], new_pos[1]);
     };
-    
-    
-    
-    this.IsMySide = function(x, y)
-    {
-        return GetMyTeam() == TEAM_1 ? x < 11 : x > 11;
-    }
     
     /**
      * Tank use it to move
@@ -1454,7 +1442,7 @@ function Tank()
     
     this.update = function()
     {
-        printf("\n************************  UPDATE *************************\n");
+        printf("\n\n\n");
         
 
        
@@ -1504,7 +1492,7 @@ function Tank()
        
        /* Process with enemy tank */
        
-        // detect bullet first
+       
         if( detectedBulletList.length > 0)
         {
             this.goToSafeZone();
@@ -1529,7 +1517,7 @@ function Tank()
             this.path = [];
 
         }
-        else
+        
         // shoot at base
         if( shootEnemy == -1)
         {
@@ -1935,9 +1923,16 @@ function OnMessage(data)
         }
         else if (command == COMMAND_REQUEST_CONTROL)
         {
-
-            Update();
-
+            try
+            {
+                Update();
+            }
+            catch(err)
+            {
+                printf("Something wen't wrong.");
+                printf(err);
+                post(logs);
+            }
         }
         else
         {
@@ -2534,7 +2529,7 @@ function OnPlaceTankRequest()
     echo("The team " + g_team);
     
     //Lite to heavy
-    var W = [TANK_HEAVY, TANK_HEAVY, TANK_HEAVY, TANK_HEAVY];
+    var W = [TANK_LIGHT, TANK_LIGHT, TANK_LIGHT, TANK_LIGHT];
     
 
     //$place[TEAM_1] = [[7, 1], [6, 1], [5, 1], [4, 1]];

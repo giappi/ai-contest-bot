@@ -1509,12 +1509,12 @@ function Tank()
         var shootEnemy = -1;
         //sort by distance to me
         var detectedBulletSortedList = detectEnemyBullet(this.m_x, this.m_y)
+        /*
         .sort( function(b1, b2)
         {
-            return GetDistance([that.m_x, that.m_y], [b1.m_x, b1.m_y]) - GetDistance([that.m_x, that.m_y], [b2.m_x, b2.m_y]);
+            return GetDistance(that.m_x, that.m_y, b1.m_x, b1.m_y) - GetDistance(that.m_x, that.m_y, b2.m_x, b2.m_y);
         });
-        
-        //printf(">>> Tank %s Enemy Bullet List: %s", this.m_id, detectedBulletSortedList.map(e => GetDistance([that.m_x, that.m_y], [e.m_x, e.m_y])));
+        */
         
         var detectedTankList = [];
         var base = g_bases[GetOpponentTeam()][0];
@@ -1550,47 +1550,24 @@ function Tank()
         * */
 
        
-       /* TODO: Tìm đường đến safezone: căn chỉnh thời gian, chọn đường tốt nhất */
+       
        
         // detect bullet first
         if( detectedBulletSortedList.length > 0)
         {
             /* To do: nếu đang bắn base, và HP còn nhiều, base.HP ít, thì không tránh đạn*/
             
-            
+            /*
             // tính toán thời gian đạn gần có thể gây nguy hiểm
             var bullet = detectedBulletSortedList[0];
             var time_to_hit = GetEuclidDistance([bullet.m_x, bullet.m_y], [this.m_x, this.m_y]) /bullet.m_speed;
-            
-            
-            // TODO: phải tính thời gian đến vị trí an toàn trước
-            
-            //backup path
-            var old_path = this.path;
-            // new path to safezone
-            this.goToSafeZone();
-            
-            
-            var time_to_avoid = this.path.length/this.m_speed;
-            
-            //printf("Time to hit: %f, time to avoid: %f, bullet.speed : %f, my.speed: %f", time_to_hit, time_to_avoid, bullet.m_speed, this.m_speed);
-            
-            // add 1 to deviation number
-            //time_to_hit -= 1;
-            // we need more time to avoid
-            var time_to_avoid_safe = (this.path.length + 0.5)/this.m_speed;
-            
-            /* only avoid if have enough time */
-            if(/*time_to_avoid - 1.2 < time_to_hit && */time_to_hit <= time_to_avoid_safe)
+            var time_to_avoid = 1/this.m_speed;
+            printf("Time to hit: %f, time to avoid: %f, bullet.speed : %f, my.speed: %f", time_to_hit, time_to_avoid, bullet.m_speed, this.m_speed);
+            */
+            //if(time_to_hit <= time_to_avoid)
+            if(true)
             {
-                //this.goToSafeZone();
-            }
-            // restore path if needn't to avoid
-            else
-            {
-                //printf("Time to hit: %f, time to avoid: %f, bullet.speed : %f, my.speed: %f", time_to_hit, time_to_avoid, bullet.m_speed, this.m_speed);
-                
-                this.path = old_path;
+                this.goToSafeZone();
             }
 
         }
@@ -1638,7 +1615,7 @@ function Tank()
         }
         else
         {
-            if(actionCenter.getCoolDown() == 0)
+            if(actionCenter.coolDownToUpdate == 0)
             {
                 this.findAnEnemyToShoot();
             }
@@ -1669,7 +1646,7 @@ function Tank()
         var newPosition = this.getPositionInNextFrame();
         var detectedBulletSortedListForward = detectEnemyBullet(newPosition[0], newPosition[1]).sort( function(b1, b2)
         {
-            return GetDistance([that.m_x, that.m_y], [b1.m_x, b1.m_y]) - GetDistance([that.m_x, that.m_y], [b2.m_x, b2.m_y]);
+            return GetDistance(that.m_x, that.m_y, b1.m_x, b1.m_y) - GetDistance(that.m_x, that.m_y, b2.m_x, b2.m_y);
         });
 
        /*
@@ -1688,14 +1665,9 @@ function Tank()
         /* check for dangerous */
         if(detectedBulletSortedList.length == 0 && detectedBulletSortedListForward.length > 0)
         {
-            var dir1 = this.m_direction;
-            var dir2 = detectedBulletSortedListForward[0].m_direction;
-            if( IsDirectionInSameWay(dir1, dir2) == false)
-            {
-                printf("Tank %d stop because dangerous.", this.m_id);
-                this.path = [];
-                this.updatePosition();
-            }
+            printf("Tank %d stop because dangerous.", this.m_id);
+            this.path = [];
+            this.updatePosition();
         }
         
         
@@ -2622,11 +2594,10 @@ function OnPlaceTankRequest()
     
     //Lite to heavy
     var W = [TANK_HEAVY, TANK_HEAVY, TANK_HEAVY, TANK_HEAVY];
-    //var W = [TANK_LIGHT, TANK_LIGHT, TANK_LIGHT, TANK_LIGHT];
     
 
     //$place[TEAM_1] = [[7, 1], [6, 1], [5, 1], [4, 1]];
-    $place[TEAM_1] = [[1, 1], [5, 1], [1, 20], [7, 20]];
+    $place[TEAM_1] = [[7, 1], [5, 2], [7, 20], [5, 19]];
     $place[TEAM_2] = GetOpposite($place[TEAM_1]);
     //var_dump($place[TEAM_2]);
     

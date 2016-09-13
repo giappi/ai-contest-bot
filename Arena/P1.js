@@ -647,6 +647,7 @@ var EnemyEnterEvent =
 var actionCenter =
 {
     coolDownToUpdate : 10,
+    strikesDropping : [],
     /**
      * 
      * @returns {Number}
@@ -681,7 +682,12 @@ var actionCenter =
     
     onPowerUpDrop: function(event)
     {
-        
+        printf("Some powerup are dropping...");
+    },
+    
+    onPowerUpDropped: function()
+    {
+        printf("Some powerup are dropped...");
     }
 };
 
@@ -1513,10 +1519,9 @@ function Tank()
         /* Current */
         var shootEnemy = -1;
         //sort by distance to me
-        var detectedBulletSortedList = detectEnemyBullet(this.m_x, this.m_y)
-        .sort( function(b1, b2)
+        var detectedBulletSortedList = detectEnemyBullet(this.m_x, this.m_y).sort(function(b1, b2)
         {
-            return GetDistance([that.m_x, that.m_y], [b1.m_x, b1.m_y]) - GetDistance([that.m_x, that.m_y], [b2.m_x, b2.m_y]);
+            return FxCompareClosestDist(that, b1, b2);
         });
         
         //printf(">>> Tank %s Enemy Bullet List: %s", this.m_id, detectedBulletSortedList.map(e => GetDistance([that.m_x, that.m_y], [e.m_x, e.m_y])));
@@ -1576,7 +1581,7 @@ function Tank()
             this.goToSafeZone();
             
             
-            var time_to_avoid = this.path.length/this.m_speed;
+            //var time_to_avoid = this.path.length/this.m_speed;
             
             //printf("Time to hit: %f, time to avoid: %f, bullet.speed : %f, my.speed: %f", time_to_hit, time_to_avoid, bullet.m_speed, this.m_speed);
             
@@ -1622,7 +1627,10 @@ function Tank()
             {
                 // continue to move
             }
-            this.path = [];
+            else
+            {
+                this.path = [];
+            }
 
         }
 
@@ -1674,9 +1682,9 @@ function Tank()
         
         /* In future. before move */
         var newPosition = this.getPositionInNextFrame();
-        var detectedBulletSortedListForward = detectEnemyBullet(newPosition[0], newPosition[1]).sort( function(b1, b2)
+        var detectedBulletSortedListForward = detectEnemyBullet(newPosition[0], newPosition[1]).sort(function(b1, b2)
         {
-            return GetDistance([that.m_x, that.m_y], [b1.m_x, b1.m_y]) - GetDistance([that.m_x, that.m_y], [b2.m_x, b2.m_y]);
+            return FxCompareClosestDist(that, b1, b2);
         });
 
        /*
@@ -2631,9 +2639,14 @@ function OnPlaceTankRequest()
     var W = [TANK_HEAVY, TANK_HEAVY, TANK_HEAVY, TANK_HEAVY];
     //var W = [TANK_LIGHT, TANK_LIGHT, TANK_LIGHT, TANK_LIGHT];
     
+    
+    var places = [
+        [[1, 1], [5, 1], [1, 20], [7, 20]],
+        [[7, 1], [6, 1], [5, 1], [4, 1]]
+    ];
 
     //$place[TEAM_1] = [[7, 1], [6, 1], [5, 1], [4, 1]];
-    $place[TEAM_1] = [[1, 1], [5, 1], [1, 20], [7, 20]];
+    $place[TEAM_1] = places[0];
     $place[TEAM_2] = GetOpposite($place[TEAM_1]);
     //var_dump($place[TEAM_2]);
     
@@ -2789,27 +2802,20 @@ function Update()
     // The GetIncomingStrike() function will return an array of strike object. Both called by your team
     // or enemy team.
     // =========================================================================================================
-    var strike = GetIncomingStrike();
-    for (var i = 0; i < strike.length; i++)
+    var strikes = GetIncomingStrike();
+    if(strikes.length > 0 && actionCenter.strikesDropping == 0)
     {
-        var x = strike[i].m_x;
-        var y = strike[i].m_y;
-        var count = strike[i].m_countDown; // Delay (in server loop) before the strike reach the battlefield.
-        var type = strike[i].m_type;
-
-        if (type == POWERUP_AIRSTRIKE)
-        {
-            // You may want to do something here, like moving your tank away if the strike is on top of your tank.
-            
-        }
-        else
-        if (type == POWERUP_EMP)
-        {
-            // Run... RUN!!!!
-        }
-        //console.log(">>> GetIncomingStrike Event.");
-        //GetMyTank(i).goTo(x, y);
+        actionCenter.onPowerUpDrop();
     }
+    
+    if(strikes.length == 0 && actionCenter.strikesDropping > 0)
+    {
+        actionCenter.onPowerUpDropped();
+    }
+    
+    //update strikes to action center
+    actionCenter.strikesDropping = strikes;
+    
 
 
 

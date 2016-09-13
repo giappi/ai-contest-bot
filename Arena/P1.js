@@ -656,7 +656,7 @@ var actionCenter =
         this.coolDownToUpdate--;
         if(this.coolDownToUpdate < 0)
         {
-            this.coolDownToUpdate = 40;
+            this.coolDownToUpdate = 50;
         }
         return this.coolDownToUpdate;
     },
@@ -981,6 +981,11 @@ function Tank()
     {
         return (pointer.x == target.x || pointer.y == target.y) && CanISee(pointer.x, pointer.y, target.x, target.y) && detectEnemyBullet(pointer.x, pointer.y).length  < 1;
     };
+    
+    var targetFx2 = function(pointer, target)
+    {
+        return (pointer.x == target.x || pointer.y == target.y) && CanISee(pointer.x, pointer.y, target.x, target.y);
+    }
     
     var visibleFx = function(X, Y)
     {
@@ -1363,7 +1368,7 @@ function Tank()
 
             var path = pathFinder.findPath(GetMap(this.m_id), [ Math.round(this.m_x), Math.round(this.m_y)], [ Math.round(g_bases[GetOpponentTeam()][0].m_x), Math.round(g_bases[GetOpponentTeam()][0].m_y)], function(pointer, target )
             {
-                return (pointer.y > 9.5 && pointer.y < 11.5 || ( (GetOpponentTeam() == TEAM_1 && pointer.x < 1.5 ) || (GetOpponentTeam() == TEAM_2 && pointer.x > 18.5 ) )) && CanISee(pointer.x, pointer.y, target.x, target.y, visibleFx);
+                return (pointer.y > 9.5 && pointer.y < 11.5 || ( (GetOpponentTeam() == TEAM_1 && pointer.x < 1.5 ) || (GetOpponentTeam() == TEAM_2 && pointer.x > 18.5 ) )) && CanISee(pointer.x, pointer.y, target.x, target.y, visibleFx) && detectEnemyBullet(pointer.x, pointer.y).length  < 1;
             });
             
             this.setPath(path);
@@ -1580,7 +1585,6 @@ function Tank()
             // we need more time to avoid
             var time_to_avoid_safe = (this.path.length + 0.5)/this.m_speed;
             
-            /* only avoid if have enough time */
             if(/*time_to_avoid - 1.2 < time_to_hit && */time_to_hit <= time_to_avoid_safe)
             {
                 //this.goToSafeZone();
@@ -1590,7 +1594,10 @@ function Tank()
             {
                 //printf("Time to hit: %f, time to avoid: %f, bullet.speed : %f, my.speed: %f", time_to_hit, time_to_avoid, bullet.m_speed, this.m_speed);
                 
-                this.path = old_path;
+                if(  detectedTankList.length < 2)
+                {
+                    this.path = old_path;
+                }
             }
 
         }

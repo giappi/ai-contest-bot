@@ -365,7 +365,7 @@ function PathFinding()
 	// that is empty if no path is possible
     // world is a 2d array of integers (eg world[10][15] = 0)
     // pathStart and pathEnd are arrays like [5,10]
-	this.findPath = function(world, pathStart, pathEnd, target_function)
+	this.findPath = function(world, pathStart, pathEnd, target_function, checkCollision_function)
 	{
            
         var t0 = performance.now();
@@ -379,12 +379,13 @@ function PathFinding()
         var worldHeight = world.length;
         var worldSize =	worldWidth * worldHeight;
         
-        canWalkHere = function(x, y)
+        canWalkHere = checkCollision_function || function(x, y)
         {
             return ((world[y] != null) &&
                 (world[y][x] != null) &&
                 (world[y][x] <= maxWalkableTileNum));
         };
+        
 
         
 		// create Nodes from the Start and End x,y coordinates
@@ -647,6 +648,7 @@ var EnemyEnterEvent =
 var actionCenter =
 {
     coolDownToUpdate : 10,
+    baseHP : 400,
     strikesDropping : [],
     /**
      * 
@@ -668,7 +670,7 @@ var actionCenter =
      */
     onBaseDemage: function(event)
     {
-        
+        printf("Base is damaging...");
     },
     /**
      * Trigger when a tank enter my side
@@ -680,7 +682,7 @@ var actionCenter =
         
     },
     
-    onPowerUpDrop: function(event)
+    onPowerUpDrop: function(items)
     {
         printf("Some powerup are dropping...");
     },
@@ -800,14 +802,14 @@ var CanISee = function(x, y, t_x, t_y, visible_function)
     var begin = vertical ? y0 : x0;
     var end   = vertical ? y1 : x1;
     var delta = [[-1, 0], [0, -1], [1, 0], [0, 1]][d][vertical];
-    var trace = [];
+    //var trace = [];
     var visible = true;
     for(i = begin; delta > 0 ? i <= end : end <= i; i += delta)
     {
         var xi = !vertical ? i : x0;
         var yi = !vertical ? y0 : i;
 
-        trace.push([xi, yi]);
+        //trace.push([xi, yi]);
         
         if(visible_function(xi, yi) == false)
         {
@@ -857,9 +859,9 @@ function detectEnemyBullet(x, y)
 
         var bullets = [];
         
-        for(var i = 0; i < g_bullets[GetOpponentTeam()].length; i++)
+        for(var i = 0; i < g_bullets[g_opteam].length; i++)
         {
-            var bullet = g_bullets[GetOpponentTeam()][i];
+            var bullet = g_bullets[g_opteam][i];
             var dx = Math.abs(x - bullet.m_x);
             var dy = Math.abs(y - bullet.m_y);
             
@@ -913,6 +915,15 @@ function findPlaceDropBomb()
 
 
 
+function CanTankSeeMyBase(x, y)
+{
+    return y > 9.5 && y < 11.5 || ( (g_team == TEAM_1 && x < 1.5 ) || (g_team == TEAM_2 && x > 18.5 ) );
+}
+
+
+
+
+
 
 function Obstacle()
 {
@@ -936,14 +947,7 @@ function Base()
 
 function fixNumber(x)
 {
-        // Round up on a square, because, in javascript, sometimes:
-        // 0.2 + 0.2 + 0.2 + 0.2 + 0.2 = 0.9999999...
-        // Lol... ^^
-        if (x % 1 < 0.05)
-            x = (x >> 0);
-        if (x % 1 > 0.95)
-            x = (x >> 0) + 1;
-        return x;
+    return Math.round(x*1000)/1000;
 }
 
 
@@ -1109,7 +1113,7 @@ function Tank()
         //var tile = this.getTileForward();
         //if( this.m_id == 3)
         {
-            printf("Tank %d: [%f, %f] -> [%f, %f] ", this.m_id, this.m_x, this.m_y, x, y);
+            //printf("Tank %d: [%f, %f] -> [%f, %f] ", this.m_id, this.m_x, this.m_y, x, y);
         }
         //echo(`Tank${this.m_id}.getTileForward = ` + BLOCKS[this.getTileForward()] + ", dir=" + DIRECTIONS_TEXT[this.m_direction]);
         
@@ -1314,7 +1318,9 @@ function Tank()
         // get enemy that they are alive
         var enemys = GetEnemyList().filter(e => e.m_HP > 0);
 
-        //sort by distance to me
+
+        var myMainBase = g_bases[g_team][0];
+        //sort by distance to base
         enemys = enemys.sort( function(t1, t2)
         {
             var d1 = GetDistance([that.m_x, that.m_y], [t1.m_x, t1.m_y]);
@@ -1327,7 +1333,7 @@ function Tank()
         // Get tanks in my side and sort by distance to base
         var enemys_in_my_side = enemys.filter(tank => that.IsMySide(tank.m_x, tank.m_y)).sort( function(t1, t2)
         {
-            return GetDistance([g_bases[GetOpponentTeam()][0].m_x, g_bases[GetOpponentTeam()][0].m_y], [t1.m_x, t1.m_y]) - GetDistance([g_bases[GetOpponentTeam()][0].m_x, g_bases[GetOpponentTeam()][0].m_y], [t2.m_x, t2.m_y]);
+            return GetDistance([myMainBase.m_x, myMainBase.m_y], [t1.m_x, t1.m_y]) - GetDistance([myMainBase.m_x, myMainBase.m_y], [t2.m_x, t2.m_y]);
         });
 
         //echo("Enemy: ");
@@ -1372,9 +1378,9 @@ function Tank()
         //if(true)
         {
 
-            var path = pathFinder.findPath(GetMap(this.m_id), [ Math.round(this.m_x), Math.round(this.m_y)], [ Math.round(g_bases[GetOpponentTeam()][0].m_x), Math.round(g_bases[GetOpponentTeam()][0].m_y)], function(pointer, target )
+            var path = pathFinder.findPath(GetMap(this.m_id), [ Math.round(this.m_x), Math.round(this.m_y)], [ Math.round(g_bases[g_opteam][0].m_x), Math.round(g_bases[g_opteam][0].m_y)], function(pointer, target )
             {
-                return (pointer.y > 9.5 && pointer.y < 11.5 || ( (GetOpponentTeam() == TEAM_1 && pointer.x < 1.5 ) || (GetOpponentTeam() == TEAM_2 && pointer.x > 18.5 ) )) && CanISee(pointer.x, pointer.y, target.x, target.y, visibleFx) && detectEnemyBullet(pointer.x, pointer.y).length  < 1;
+                return (pointer.y > 9.5 && pointer.y < 11.5 || ( (g_opteam == TEAM_1 && pointer.x < 1.5 ) || (g_opteam == TEAM_2 && pointer.x > 18.5 ) )) && CanISee(pointer.x, pointer.y, target.x, target.y, visibleFx) && detectEnemyBullet(pointer.x, pointer.y).length  < 1;
             });
             
             this.setPath(path);
@@ -1402,7 +1408,7 @@ function Tank()
         {
             printf("Tank %d detect bullet.", this.m_id);
         }
-        printf("Tank %d go to safezone.", this.m_id);
+        
         
 
         // Tìm nơi không có đạn
@@ -1415,6 +1421,7 @@ function Tank()
         this.setPath(path);
         printf("Path found for goToSafeZone: ");
         var_dump(this.path);
+        printf("Tank %d go to safezone.", this.m_id);
        
     };
     
@@ -1471,6 +1478,8 @@ function Tank()
     {
         return g_team == TEAM_1 ? x < 11 : x > 11;
     }
+
+    
     
     /**
      * Tank use it to move
@@ -1527,7 +1536,7 @@ function Tank()
         //printf(">>> Tank %s Enemy Bullet List: %s", this.m_id, detectedBulletSortedList.map(e => GetDistance([that.m_x, that.m_y], [e.m_x, e.m_y])));
         
         var detectedTankList = [];
-        var base = g_bases[GetOpponentTeam()][0];
+        var base = g_bases[g_opteam][0];
         
 
         
@@ -1563,6 +1572,7 @@ function Tank()
        /* TODO: Tìm đường đến safezone: căn chỉnh thời gian, chọn đường tốt nhất */
        
         // detect bullet first
+        var avoid = true;
         if( detectedBulletSortedList.length > 0)
         {
             /* To do: nếu đang bắn base, và HP còn nhiều, base.HP ít, thì không tránh đạn*/
@@ -1572,16 +1582,14 @@ function Tank()
             var bullet = detectedBulletSortedList[0];
             var time_to_hit = GetEuclidDistance([bullet.m_x, bullet.m_y], [this.m_x, this.m_y]) /bullet.m_speed;
             
-            
-            // TODO: phải tính thời gian đến vị trí an toàn trước
-            
+
             //backup path
             var old_path = this.path;
             // new path to safezone
             this.goToSafeZone();
             
             
-            //var time_to_avoid = this.path.length/this.m_speed;
+            var time_to_avoid = this.path.length/this.m_speed;
             
             //printf("Time to hit: %f, time to avoid: %f, bullet.speed : %f, my.speed: %f", time_to_hit, time_to_avoid, bullet.m_speed, this.m_speed);
             
@@ -1590,23 +1598,26 @@ function Tank()
             // we need more time to avoid
             var time_to_avoid_safe = (this.path.length + 0.5)/this.m_speed;
             
-            if(/*time_to_avoid - 1.2 < time_to_hit && */time_to_hit <= time_to_avoid_safe)
+            
+            //printf(" Tank %d Time to hit: %f, time to avoid: %f, bullet.speed : %f, my.speed: %f", this.m_id, time_to_hit, time_to_avoid, bullet.m_speed, this.m_speed);
+            
+            
+            if(time_to_hit <= time_to_avoid_safe)
             {
                 //this.goToSafeZone();
             }
             // restore path if needn't to avoid
             else
             {
-                //printf("Time to hit: %f, time to avoid: %f, bullet.speed : %f, my.speed: %f", time_to_hit, time_to_avoid, bullet.m_speed, this.m_speed);
-                
-                if(  detectedTankList.length < 2)
+                //if(  detectedTankList.length < 2)
                 {
                     this.path = old_path;
+                    avoid = false;
                 }
             }
 
         }
-        else
+        
         if(detectedTankList.length > 0)
         {
             // need to select best tank to shoot
@@ -1618,18 +1629,22 @@ function Tank()
             // select best tank
             var tank = detectedTankList[0];
 
-            // shoot at it
-            this.setDirection( this.calcLineDirectionTo(tank.m_x, tank.m_y));
-            //this.shoot();
-            shootEnemy = tank.m_id;
-            // keep moving if their direction in a line
-            if( IsDirectionInSameWay( this.getPathDirection(), tank.getDirection()) == false)
+            if( avoid == false)
             {
-                // continue to move
-            }
-            else
-            {
-                this.path = [];
+                // shoot at it
+                this.setDirection( this.calcLineDirectionTo(tank.m_x, tank.m_y));
+                //this.shoot();
+                shootEnemy = tank.m_id;
+                
+                // keep moving if their direction in a line
+                if( IsDirectionInSameWay( this.getPathDirection(), tank.getDirection()) == false)
+                {
+                    // continue to move
+                }
+                else
+                {
+                    this.path = [];
+                }
             }
 
         }
@@ -1639,7 +1654,7 @@ function Tank()
         // shoot at base
         if( shootEnemy == -1)
         {
-            if( this.m_y > 9.5 && this.m_y < 11.5 || ( (GetOpponentTeam() == TEAM_1 && this.m_x < 1.5 ) || (GetOpponentTeam() == TEAM_2 && this.m_x > 18.5 ) ) )
+            if( this.m_y > 9.5 && this.m_y < 11.5 || ( (g_opteam == TEAM_1 && this.m_x < 1.5 ) || (g_opteam == TEAM_2 && this.m_x > 18.5 ) ) )
             {
                 this.setDirection( this.calcLineDirectionTo(base.m_x, base.m_y));
             }
@@ -1726,12 +1741,13 @@ function Tank()
                 if(this.getDirection() == t_direction)
                 {
                     this.shoot();
+                    break;
                 }
             }
         }
 
        // shoot at base
-        if( this.m_y > 9.5 && this.m_y < 11.5 || ( (GetOpponentTeam() == TEAM_1 && this.m_x < 1.5 ) || (GetOpponentTeam() == TEAM_2 && this.m_x > 18.5 ) ) )
+        if( this.m_y > 9.5 && this.m_y < 11.5 || ( (g_opteam == TEAM_1 && this.m_x < 1.5 ) || (g_opteam == TEAM_2 && this.m_x > 18.5 ) ) )
         {
             var t_direction = this.calcLineDirectionTo(base.m_x, base.m_y);
             if(this.getDirection() == t_direction)
@@ -1767,7 +1783,7 @@ function GetMyTeamList()
 
 function GetEnemyList()
 {
-    return g_tanks[GetOpponentTeam()];
+    return g_tanks[g_opteam];
 }
 
 
@@ -1858,6 +1874,7 @@ function PowerUp()
     this.m_y = 0;
 }
 var g_team = -1;
+var g_opteam = -1;
 var g_state = STATE_WAITING_FOR_PLAYERS;
 var g_map = [];
 var g_obstacles = [];
@@ -1962,6 +1979,7 @@ function OnMessage(data)
         if (command == COMMAND_SEND_TEAM)
         {
             g_team = DecodeUInt8(data, readOffset);
+            g_opteam = g_team == TEAM_1 ? TEAM_2 : TEAM_1;
             readOffset++;
         }
         else if (command == COMMAND_UPDATE_STATE)
@@ -2517,9 +2535,6 @@ function GetChocolateAt(x, y)
 
 function GetMyTeam()
 {
-    // This function return your current team.
-    // It can be either TEAM_1 or TEAM_2
-    // Obviously, your opponent is the other team.
     return g_team;
 }
 
@@ -2537,7 +2552,7 @@ function GetMyTank(id)
 function GetEnemyTank(id)
 {
     // Return enemy tank, just give the id.
-    return g_tanks[GetOpponentTeam()][id];
+    return g_tanks[g_opteam][id];
 }
 
 function GetPowerUpList()
@@ -2636,8 +2651,8 @@ function OnPlaceTankRequest()
     echo("The team " + g_team);
     
     //Lite to heavy
+    //var W = [TANK_HEAVY, TANK_HEAVY, TANK_HEAVY, TANK_HEAVY];
     var W = [TANK_HEAVY, TANK_HEAVY, TANK_HEAVY, TANK_HEAVY];
-    //var W = [TANK_LIGHT, TANK_LIGHT, TANK_LIGHT, TANK_LIGHT];
     
     
     var places = [
@@ -2731,7 +2746,7 @@ function OnPlaceTankRequest()
 function Update()
 {
     
-    printf("\n************************  UPDATE *************************\n");
+    //printf("\n************************  UPDATE *************************\n");
         
     
     //var t0 = performance.now();
@@ -2755,8 +2770,8 @@ function Update()
         for(var i = 0; i < NUMBER_OF_TANK; i++)
         {
             var t = GetMyTank(i);
-            t.setPath($path[GetMyTeam()][i]);
-            t.target = $target[GetMyTeam()][i];
+            t.setPath($path[g_team][i]);
+            t.target = $target[g_team][i];
         }
         //skip first update time
         
@@ -2772,11 +2787,11 @@ function Update()
     // =========================================================================================================
     if (g_state == STATE_FINISHED)
     {
-        if (((g_matchResult == MATCH_RESULT_TEAM_1_WIN) && (GetMyTeam() == TEAM_1)) || ((g_matchResult == MATCH_RESULT_TEAM_2_WIN) && (GetMyTeam() == TEAM_2)))
+        if (((g_matchResult == MATCH_RESULT_TEAM_1_WIN) && (g_team == TEAM_1)) || ((g_matchResult == MATCH_RESULT_TEAM_2_WIN) && (g_team == TEAM_2)))
         {
             console.log("I WON. I WON. I'M THE BEST!!!");
         }
-        else if (((g_matchResult == MATCH_RESULT_TEAM_2_WIN) && (GetMyTeam() == TEAM_1)) || ((g_matchResult == MATCH_RESULT_TEAM_1_WIN) && (GetMyTeam() == TEAM_2)))
+        else if (((g_matchResult == MATCH_RESULT_TEAM_2_WIN) && (g_team == TEAM_1)) || ((g_matchResult == MATCH_RESULT_TEAM_1_WIN) && (g_team == TEAM_2)))
         {
             console.log("DAMN, I LOST. THAT GUY WAS JUST LUCKY!!!");
         }
@@ -2832,25 +2847,29 @@ function Update()
         var type = powerUp[i].m_type;
         if (type == POWERUP_AIRSTRIKE)
         {
-           
             // You may want to move your tank to this position to secure this power up.
         }
         else if (type == POWERUP_EMP)
         {
 
         }
-       // console.log(">>> GetPowerUpList Event.");
-        /*
-        var myTank = GetMyTank(i);
-        if( !myTank.busy)
-        {
-            console.log("Tank[" + i + "] going to Power up Item at ( " + x + ", " + y + ").");
-            myTank.goTo(x, y);
-            myTank.busy = 1;
-        }
-        */
+
         
     }
+    
+    
+    
+    
+    /* DETECT MAIN BASE IS DAMMAGING */
+    var myMainBase = g_bases[g_team][0];
+    
+    
+    if(myMainBase.m_HP < actionCenter.baseHP)
+    {
+        actionCenter.onBaseDemage();
+    }
+    //update HP
+    actionCenter.baseHP = myMainBase.m_HP;
 
 
 
@@ -2882,9 +2901,18 @@ function Update()
     //bomb
     if (HasAirstrike())
     {
+        /*
         //drop into your main base
         var your_team = GetOpponentTeam();
         UseAirstrike( $base_main[your_team][0], $base_main[your_team][1]);
+        */
+       
+        // get your team list and sort by HP
+        var L = GetEnemyList().filter(function(e){ return e.m_HP > 0; }).sort(function(e1, e2){ e2.m_HP - e1.m_HP;});
+        // drop into tank have the most HP && shooting
+        var most = L[0];
+        UseAirstrike( most.m_x, most.m_y);
+        
         
     }
     // đóng băng
@@ -2893,7 +2921,8 @@ function Update()
 
         // get your team list and sort by HP
         var L = GetEnemyList().filter(function(e){ return e.m_HP > 0; }).sort(function(e1, e2){ e2.m_HP - e1.m_HP;});
-        // drop into tank have the most HP 
+        // drop into tank have the most HP && shooting
+        var most = L[0];
         UseEMP( L[0].m_x, L[0].m_y);
 
     }

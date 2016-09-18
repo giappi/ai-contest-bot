@@ -365,7 +365,7 @@ function PathFinding()
 	// that is empty if no path is possible
     // world is a 2d array of integers (eg world[10][15] = 0)
     // pathStart and pathEnd are arrays like [5,10]
-	this.findPath = function(world, pathStart, pathEnd, target_function, checkCollision_function)
+	this.findPath = function(world, pathStart, pathEnd, target_function)
 	{
            
         var t0 = performance.now();
@@ -379,7 +379,7 @@ function PathFinding()
         var worldHeight = world.length;
         var worldSize =	worldWidth * worldHeight;
         
-        canWalkHere = checkCollision_function || function(x, y)
+        canWalkHere =  function(x, y)
         {
             return ((world[y] != null) &&
                 (world[y][x] != null) &&
@@ -1572,7 +1572,7 @@ function Tank()
        /* TODO: Tìm đường đến safezone: căn chỉnh thời gian, chọn đường tốt nhất */
        
         // detect bullet first
-        var avoid = true;
+        var avoid = false;
         if( detectedBulletSortedList.length > 0)
         {
             /* To do: nếu đang bắn base, và HP còn nhiều, base.HP ít, thì không tránh đạn*/
@@ -1605,15 +1605,13 @@ function Tank()
             if(time_to_hit <= time_to_avoid_safe)
             {
                 //this.goToSafeZone();
+                avoid = true;
             }
             // restore path if needn't to avoid
             else
             {
-                //if(  detectedTankList.length < 2)
-                {
-                    this.path = old_path;
-                    avoid = false;
-                }
+                this.path = old_path;
+                avoid = false;
             }
 
         }
@@ -1702,17 +1700,6 @@ function Tank()
             return FxCompareClosestDist(that, b1, b2);
         });
 
-       /*
-       if(this.m_id == 3)
-       {
-           printf("Tank %d: [%f, %f]", this.m_id, this.m_x, this.m_y);
-           printf("Tank %d: Direction: %d", this.m_id, DIRECTIONS_TEXT[this.getDirection()]);
-           printf("Tank %d: Detected Bullet: %d", this.m_id, detectedBulletSortedList.length);
-           detectedBulletSortedList.length && printf("Tank %d: Detected Bullet: [%f, %f]", this.m_id, detectedBulletSortedList[0]["m_x"], detectedBulletSortedList[0]["m_y"]);
-           printf("Tank %d: Detected Bullet forward: %d", this.m_id, detectedBulletSortedListForward.length);
-           detectedBulletSortedListForward.length && printf("Tank %d: Detected Bullet: [%f, %f]", this.m_id, detectedBulletSortedListForward[0]["m_x"], detectedBulletSortedListForward[0]["m_y"]);
-       }
-       */
 
        
         /* check for dangerous */
